@@ -1,0 +1,74 @@
+/*============================================================*
+*	SKILL Application Manager Initializing File (.saminit)
+*
+*	Purpose:	This File can be used as a part of the SKILL
+*				Application Manager (SAM) to customize the GUI
+*				of Cadence Viruoso. Loading this file to the
+*				Viruoso Command Interpreter Window (CIW) adds
+*				a menu item "Open rbzSAM" to the toolbar menu
+*				item "Tools" of the CIW. Therefor you have to
+*				enter the correct path to your rbzSAM.il code
+*				file in the following. Loading the .saminit
+*				file could be done in the .cdsinit file.
+*
+*	Author:		Florian Leber, Tobias Wolfer
+*
+*	Revision:	Additional (optional) part of:
+*				SKILL Application Manager (SAM)	1.0		(26.04.2017)
+*
+*	Copyright 2017 Robert-Bosch-Center Reutlingen (Germany)
+*	
+*	Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+*	and associated documentation files (the "Software"), to deal in the Software without restriction,
+*	including without limitation the rights to use, copy, modify, merge, publish, distribute,
+*	sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+*	furnished to do so, subject to the following conditions:
+*	
+*	The above copyright notice and this permission notice shall be included in all copies or substantial
+*	portions of the Software.
+*	
+*	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+*	NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+*	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+*	WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+*	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*=============================================================*/
+
+/*============================================================*
+Path to the rbzSAM.il-Code:
+*============================================================*/
+(printf "PLEASE ENTER THE CORRECT PATH IN THE .saminit FILE")	; This line should be commented out afer entering the path.
+rbzSAMilPath 		= "skill/rbzSkillAppManager/"
+
+/*============================================================*
+User Customization:
+*============================================================*/
+ciwMenuInit()	; Initialisation have to be done before customization
+(hiInsertMenuItem
+	;	1:	r_hiMenue = Menu created with hiCreateMenu or hiCreatePulldownMenu
+;	(hiGetMenuItems
+		(eval
+			(nth 
+				1	; 0 -> File ; 1 -> Tools ; ...
+				(hiGetBannerMenus hiGetCIWindow())
+			)
+		)
+;	)
+	;	2:	r_menuItem = Menu item description returned from hiCreateMenuItem.
+	( hiCreateMenuItem
+		?name ( gensym 'rbzSAMmenuItem )
+		?itemText "Open rbzSAM"
+		?callback (strcat "(load \""	rbzSAMilPath	"rbzSAM_1_0.il\") (rbzSAMcore)")
+	)
+	;	3:	g_position = Symbol or integer specifying the item to insert after.
+	(length		; put the SAM-item to the end of the pulldown menu
+		(hiGetMenuItems
+			(eval
+				(nth 
+					1	; 0 -> File ; 1 -> Tools ; ...
+					(hiGetBannerMenus hiGetCIWindow())
+				)
+			)
+		)
+	)
+)
