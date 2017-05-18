@@ -198,6 +198,7 @@ Description:
 		aFiles = ( getDirFiles sPath )
 		aFiles = ( setof fl aFiles (isFile strcat(sPath "/" fl)))			; sort out all directorys
 		aIlFiles = ( setof fl aFiles (rexMatchp "^[a-zA-Z].*\\.il$" fl)) 	; sort out everything, that is no .il-file
+		aIlFiles = ( sort aIlFiles nil )									; alphabetical sort
 		( mapcar (lambda (x) (strcat sPath "/" x)  ) aIlFiles )				; add the path to the names of the .il-files
 	)
 )
@@ -212,6 +213,7 @@ Description:
 		aFiles = ( getDirFiles sPath )
 		aFiles = ( setof fl aFiles (isFile strcat(sPath "/" fl)))			; sort out all directorys
 		aIlsFiles = ( setof fl aFiles (rexMatchp "^[a-zA-Z].*\\.ils$" fl))	; sort out everything, that is no .ils-file
+		aIlsFiles = ( sort aIlsFiles nil )									; alphabetical sort
 		( mapcar (lambda (x) (strcat sPath "/" x)  ) aIlsFiles )			; add the path to the names of the .ils-files
 	)
 )
@@ -226,6 +228,7 @@ Description:
 		aFiles = ( getDirFiles sPath )
 		aFiles = ( setof fl aFiles (isDir (strcat sPath "/" fl) ) )					; sort out, what is no directory
 		Librarys = ( setof fl aFiles (isFile (strcat sPath "/" fl "/.oalib" ) ) )	; sort out, what contains no .oalib-file
+		Librarys = ( sort Librarys nil )											; alphabetical sort
 		(mapcar (lambda (x) (strcat sPath "/" x)  ) Librarys )						; add the path to the names of the .ils-files
 	)
 )
@@ -531,7 +534,7 @@ Description:
 		)
 		(eval window)->vAction->runConfigurations = ( hiCreateAction
 				?name ( gensym 'rbzSAMaction )	
-				?iconText "Run Configuration"	
+				?iconText "Edit Run"	
 				?callback ( strcat "(rbzSAMRunConfigurationForm '" window " '" data  ")" )
 		)
 
@@ -903,7 +906,7 @@ Description:
 			?name 'treeField2
 			?selectMode 'single
 			?titleAlignment 'center
-			?headers '(("Name" 200 left) ("Description" 300 left) ("Path" 250 left))
+			?headers '(("Name" 200 left) ("Description" 300 left) ("Path" 330 left))
 			?choice (eval window)->vForm->oAppTree 
 		)
 		(eval window)->vForm->oAppTreeDoubleClickCallback = ( rbzSAMgenerateTreeDoubleClickCallback window data)
@@ -1275,19 +1278,19 @@ Description:
 	(eval window)->CreateNewApp = (list nil)
 	(eval window)->CreateNewApp->projectPathField = ( hiCreateStringField
 		?name ( gensym 'rbzSAMCreateNewAppFormItem )
-		?prompt "Project Directory / Project Name:"
-		?defValue "newApp"
+		?prompt "Application Directory / Name:"
+		?defValue "newApplication"
 		?editable t
 	)
 	(eval window)->CreateNewApp->projectDiscription = ( hiCreateStringField
 		?name ( gensym 'rbzSAMCreateNewFileFormItem )
-		?prompt "Project Discription"
-		?defValue "new project"
+		?prompt "Application Discription:"
+		?defValue "Textual description"
 		?editable t
 	)
 	(eval window)->CreateNewApp->appForm = ( hiCreateAppForm 
 		?name  ( gensym 'rbzSAMCreateNewAppFormItem )
-		?formTitle "SAM: Create New App"
+		?formTitle "SAM: Create New Application"
 		?dialogStyle 'modal
 		?buttonLayout 'OKCancel
 		?callback ( strcat "(rbzSAMCreateNewAppFormCallback '" window " '" data  ")" )
@@ -1334,7 +1337,7 @@ Description:
 	(eval window)->RunConfiguration = (list nil)
 	(eval window)->RunConfiguration->descriptionField = ( hiCreateOutputStringField
 		?name ( gensym 'rbzSAMRunConfigurationFormItem )
-		?value (strcat "Run Project \"" (eval data)->currentApp "\":")
+		?value (strcat "Run definitions of \"" (eval data)->currentApp "\":")
 	)
 	(eval window)->RunConfiguration->comboField = ( hiCreateComboField
 		?name ( gensym 'rbzSAMRunConfigurationFormItem )
@@ -1362,7 +1365,7 @@ Description:
 	)
 	(eval window)->RunConfiguration->appForm = ( hiCreateAppForm 
 		?name ( gensym 'rbzSAMRunConfigurationFormItem )
-		?formTitle "SAM: Run Configuration"
+		?formTitle "SAM: Edit Run"
 		?dialogStyle 'modal
 		?buttonLayout 'OKCancel
 		?callback ( strcat "(rbzSAMRunConfigurationFormCallback '" window " '" data  ")" )
