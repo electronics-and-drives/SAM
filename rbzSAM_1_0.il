@@ -301,10 +301,12 @@ Description:
 *=============================================================*/
 ( defun rbzSAMupdateRunComboFromCurrentApp (window data)
 	( let (name) 
-		name = (eval data)->currentApp	
-		(eval window)->vToolbar->xRunCombo->items = (reverse (eval data)->appTable[name]->runTable->?)	
-		(eval window)->vToolbar->xRunCombo->value = (eval data)->appTable[name]->runDefault
-		;(printf "DEBUG: combo items = %L" (eval window)->vToolbar->xRunCombo->items)
+		name = (eval data)->currentApp
+		( when name	
+			(eval window)->vToolbar->xRunCombo->items = (reverse (eval data)->appTable[name]->runTable->?)	
+			(eval window)->vToolbar->xRunCombo->value = (eval data)->appTable[name]->runDefault
+			;(printf "DEBUG: combo items = %L" (eval window)->vToolbar->xRunCombo->items)
+		)
 	)
 )
 /*============================================================*
@@ -315,8 +317,10 @@ Description:
 	(xDisplayApp) is displayed in the toolbar "Display"
 	(xDisplayApp).
 *=============================================================*/
-( defun rbzSAMupdateToolbarDisplayApp (window data) 
-	(eval window)->vToolbar->xDisplayApp->value = (eval data)->currentApp
+( defun rbzSAMupdateToolbarDisplayApp (window data)
+	(when (eval data)->currentApp
+		(eval window)->vToolbar->xDisplayApp->value = (eval data)->currentApp
+	)
 )
 /*============================================================*
 Description:
@@ -369,8 +373,8 @@ Description:
 ( defun rbzSAMrefreshAllApp (window data) 
 	( rbzSAMupdateAppDataList data )					; Funktion erstellt (hier in SAM->data->appTable) eine AT, die als Keys die Namen der Proj.verz. hat (Value zu den Keys sind aus .sap-File)
 	( rbzSAMupdateFromAppTree window data )				; @Tobias ...komentieren!
-	( rbzSAMupdateToolbarDisplayApp window data )		; Aktualisieren des Eingabefelds "Current Application: " (xDisplayApp) für die neue selektedApp
-	( rbzSAMupdateRunComboFromCurrentApp window data )	; Aktualisieren der Combo-Box "Load and Run" (xRunCombo) für die neue selektedApp
+	( rbzSAMupdateToolbarDisplayApp window data )		; Aktualisieren des Eingabefelds "Current Application: " (xDisplayApp) fr die neue selektedApp
+	( rbzSAMupdateRunComboFromCurrentApp window data )	; Aktualisieren der Combo-Box "Load and Run" (xRunCombo) fr die neue selektedApp
 	;(rbzSAMupdateconfig window data)
 )
 
@@ -502,7 +506,7 @@ Description:
 		;=======================================================
 		;Action
 		;=======================================================
-		/*	Die Actions für die Icons in den verschiedenen
+		/*	Die Actions fr die Icons in den verschiedenen
 			Toolbars werden erzeugt.
 		*/
 		(eval window)->vAction = (list nil)
@@ -1670,7 +1674,7 @@ Description:
 					"sFolder = ( simplifyFilename ( car ( hiFileDialogSelection dialog ) ) ) "
 					;"( printf \"\nDEBUG: %N\" sFolder) "
 					"( if (neq 0 (strcmp \"/\" (substring sFolder (length sFolder)))) then "	; (if < last character in the string != "/"> then
-					"	 sFolder = ( strcat sFolder \"/\" ) "						;		ergänzen von "/"
+					"	 sFolder = ( strcat sFolder \"/\" ) "						;		ergnzen von "/"
 					") "
 					"sPathToFile = ( strcat sFolder ( cadr ( hiFileDialogSelection dialog ) ) ) "
 					;"( printf \"\nDEBUG: %N\" sPathToFile) "
