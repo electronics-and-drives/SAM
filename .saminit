@@ -58,7 +58,7 @@ ciwMenuInit()	; Initialisation have to be done before customization
 	( hiCreateMenuItem
 		?name ( gensym 'rbzSAMmenuItem )
 		?itemText "Open rbzSAM"
-		?callback (strcat "(load \""	rbzSAMilPath	"rbzSAM_1_0.il\") (rbzSAMcore)")
+		?callback (strcat "(load \""	rbzSAMilPath	"rbzSAM.il\") (rbzSAMcore)")
 	)
 	;	3:	g_position = Symbol or integer specifying the item to insert after.
 	(length		; put the SAM-item to the end of the pulldown menu
