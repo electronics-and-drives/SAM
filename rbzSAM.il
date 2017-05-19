@@ -1536,14 +1536,14 @@ Description:
 ( defun rbzSAMopenAddRunConfigurationFormCallback (window data)
 	(let (RunName)
 		RunName = (eval window)->AddRunConfiguration->RunNameField->value;
-		(if (eq (length RunName) 0) then
-			(printf "\n*ERROR* Run Name was not set.")
-		else
+		(if (rexMatchp "[-_A-Za-z0-9]+" RunName)  then
 			(eval data)->appTable[(eval data)->currentApp]->runTable[RunName] = (list nil
 				'preEval	(eval window)->AddRunConfiguration->PreEvalField->value
 				'postEval	(eval window)->AddRunConfiguration->PostEvalField->value
 				'eval		(eval window)->AddRunConfiguration->EvalField->value
 			)
+		else
+			(printf "\n*ERROR* Run Name is not valid.")
 		)
 		; Close and Open the Form to update the items of the Combobox
 		(hiFormClose (eval window)->RunConfiguration->appForm)
