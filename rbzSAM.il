@@ -275,14 +275,19 @@ Description:
 *=============================================================*/
 ( defun rbzSAMloadAndRunCurrentApp (data)
 	(let (name runName returnVar)
-		name = (eval data)->currentApp
-		runName = (eval data)->selectedRun
-		(printf "\n***** rbzSAM - Load - Name:\"%s\" Run:\"%s\"\n" name runName )
-		(rbzSAMloadIlFiles data name)
-		(rbzSAMloadIlsFiles data name)
-		(printf "***** rbzSAM - Run - Name:\"%s\" Run:\"%s\"\n" name runName )
-		returnVar = (rbzSAMrunApp data name runName)
-		(printf "***** rbzSAM - Return (preRun Run postRun) : \"%L\"" returnVar )
+		(if (eval data)->currentApp then
+			name = (eval data)->currentApp
+			runName = (eval data)->selectedRun
+			(printf "\n***** rbzSAM - Load - Name:\"%s\" Run:\"%s\"\n" name runName )
+			(rbzSAMloadIlFiles data name)
+			(rbzSAMloadIlsFiles data name)
+			(printf "***** rbzSAM - Run - Name:\"%s\" Run:\"%s\"\n" name runName )
+			returnVar = (rbzSAMrunApp data name runName)
+			(printf "***** rbzSAM - Return (preRun Run postRun) : \"%L\"" returnVar )
+		else
+			(printf "No current application selected!")
+		)
+			
 	) 
 )
 /*============================================================*
@@ -1338,50 +1343,54 @@ Description:
 	("Add").
 *=============================================================*/
 ( defun rbzSAMRunConfigurationForm ( window data )
-	(eval window)->RunConfiguration = (list nil)
-	(eval window)->RunConfiguration->descriptionField = ( hiCreateOutputStringField
-		?name ( gensym 'rbzSAMRunConfigurationFormItem )
-		?value (strcat "Run definitions of \"" (eval data)->currentApp "\":")
-	)
-	(eval window)->RunConfiguration->comboField = ( hiCreateComboField
-		?name ( gensym 'rbzSAMRunConfigurationFormItem )
-		?items (eval data)->appTable[(eval data)->currentApp]->runTable->?
-		?defValue (car (eval data)->appTable[(eval data)->currentApp]->runTable->?)
-		?callback ""
-		?editable nil
-	)
-	(eval window)->RunConfiguration->comboField->insertPolicy = 'InsertAtTop
+	(if (eval data)->currentApp then
+		(eval window)->RunConfiguration = (list nil)
+		(eval window)->RunConfiguration->descriptionField = ( hiCreateOutputStringField
+			?name ( gensym 'rbzSAMRunConfigurationFormItem )
+			?value (strcat "Run definitions of \"" (eval data)->currentApp "\":")
+		)
+		(eval window)->RunConfiguration->comboField = ( hiCreateComboField
+			?name ( gensym 'rbzSAMRunConfigurationFormItem )
+			?items (eval data)->appTable[(eval data)->currentApp]->runTable->?
+			?defValue (car (eval data)->appTable[(eval data)->currentApp]->runTable->?)
+			?callback ""
+			?editable nil
+		)
+		(eval window)->RunConfiguration->comboField->insertPolicy = 'InsertAtTop
 	
-	(eval window)->RunConfiguration->ButtonEdit = ( hiCreateFormButton
-		?name ( gensym 'rbzSAMRunConfigurationFormItem )
-		?callback ( strcat "(rbzSAMopenEditRunConfigurationForm '" window " '" data ")" )
-		?buttonText "Edit"
+		(eval window)->RunConfiguration->ButtonEdit = ( hiCreateFormButton
+			?name ( gensym 'rbzSAMRunConfigurationFormItem )
+			?callback ( strcat "(rbzSAMopenEditRunConfigurationForm '" window " '" data ")" )
+			?buttonText "Edit"
+		)
+		(eval window)->RunConfiguration->ButtonDelete = ( hiCreateFormButton
+			?name ( gensym 'rbzSAMRunConfigurationFormItem )
+			?callback ( strcat "(rbzSAMDeleteRunConfigurationCallback '" window " '" data ")" )
+			?buttonText "Delete"
+		)
+		(eval window)->RunConfiguration->ButtonAdd = ( hiCreateFormButton
+			?name ( gensym 'rbzSAMRunConfigurationFormItem )
+			?callback ( strcat "(rbzSAMopenAddRunConfigurationForm '" window " '" data ")" )
+			?buttonText "Add"
+		)
+		(eval window)->RunConfiguration->appForm = ( hiCreateAppForm 
+			?name ( gensym 'rbzSAMRunConfigurationFormItem )
+			?formTitle "SAM: Edit Run"
+			?dialogStyle 'modal
+			?buttonLayout 'OKCancel
+			?callback ( strcat "(rbzSAMRunConfigurationFormCallback '" window " '" data  ")" )
+			?fields (list
+				(list (eval window)->RunConfiguration->descriptionField 0:5  400:30)	;x_xpos : x_ypos x_width : x_height
+				(list (eval window)->RunConfiguration->comboField	20:50	230:30)
+				(list (eval window)->RunConfiguration->ButtonEdit	350:40 	80:20)
+				(list (eval window)->RunConfiguration->ButtonDelete	350:65	80:20)
+				(list (eval window)->RunConfiguration->ButtonAdd	350:90	80:20)
+				)
+		)
+		(hiDisplayForm (eval window)->RunConfiguration->appForm)
+	else
+		(printf "No current application selected!")
 	)
-	(eval window)->RunConfiguration->ButtonDelete = ( hiCreateFormButton
-		?name ( gensym 'rbzSAMRunConfigurationFormItem )
-		?callback ( strcat "(rbzSAMDeleteRunConfigurationCallback '" window " '" data ")" )
-		?buttonText "Delete"
-	)
-	(eval window)->RunConfiguration->ButtonAdd = ( hiCreateFormButton
-		?name ( gensym 'rbzSAMRunConfigurationFormItem )
-		?callback ( strcat "(rbzSAMopenAddRunConfigurationForm '" window " '" data ")" )
-		?buttonText "Add"
-	)
-	(eval window)->RunConfiguration->appForm = ( hiCreateAppForm 
-		?name ( gensym 'rbzSAMRunConfigurationFormItem )
-		?formTitle "SAM: Edit Run"
-		?dialogStyle 'modal
-		?buttonLayout 'OKCancel
-		?callback ( strcat "(rbzSAMRunConfigurationFormCallback '" window " '" data  ")" )
-		?fields (list
-			(list (eval window)->RunConfiguration->descriptionField 0:5  400:30)	;x_xpos : x_ypos x_width : x_height
-			(list (eval window)->RunConfiguration->comboField	20:50	230:30)
-			(list (eval window)->RunConfiguration->ButtonEdit	350:40 	80:20)
-			(list (eval window)->RunConfiguration->ButtonDelete	350:65	80:20)
-			(list (eval window)->RunConfiguration->ButtonAdd	350:90	80:20)
-			)
-	)
-	(hiDisplayForm (eval window)->RunConfiguration->appForm)
 )
 /*============================================================*
 Description:
@@ -1556,29 +1565,33 @@ Description:
 	"Export" in the menu "File".
 *=============================================================*/
 ( defun rbzSAMexportForm ( window data )
-	(eval window)->export = (list nil)
-	(eval window)->export->descriptionField = ( hiCreateOutputStringField
-		?name ( gensym 'rbzSAMexportFormItem )
-		?value "Select the App for export:"
-	)
+	(if (eval data)->currentApp then
+		(eval window)->export = (list nil)
+		(eval window)->export->descriptionField = ( hiCreateOutputStringField
+			?name ( gensym 'rbzSAMexportFormItem )
+			?value "Select the App for export:"
+		)
 
-	(eval window)->export->comboField = ( hiCreateComboField
-		?name ( gensym 'rbzSAMexportFormItem )
-		?items (eval data)->appTable->?
-		?defValue (eval data)->currentApp
-		?editable nil
+		(eval window)->export->comboField = ( hiCreateComboField
+			?name ( gensym 'rbzSAMexportFormItem )
+			?items (eval data)->appTable->?
+			?defValue (eval data)->currentApp
+			?editable nil
+		)
+		(eval window)->export->appForm = ( hiCreateAppForm 
+			?name 'ExportForm
+			?formTitle "SAM: Export App"
+			?dialogStyle 'modal
+			?buttonLayout 'OKCancel
+			?callback ( strcat "(rbzSAMexportFormCallback '" window " '" data  ")" )
+			?fields (list
+				(list (eval window)->export->descriptionField 5:10  200:30)
+				(list (eval window)->export->comboField 210:6  300:30) )
+		)
+		(hiDisplayForm (eval window)->export->appForm)
+	else
+		(printf "No current application selected!")
 	)
-	(eval window)->export->appForm = ( hiCreateAppForm 
-		?name 'ExportForm
-		?formTitle "SAM: Export App"
-		?dialogStyle 'modal
-		?buttonLayout 'OKCancel
-		?callback ( strcat "(rbzSAMexportFormCallback '" window " '" data  ")" )
-		?fields (list
-			(list (eval window)->export->descriptionField 5:10  200:30)
-			(list (eval window)->export->comboField 210:6  300:30) )
-	)
-	(hiDisplayForm (eval window)->export->appForm)
 )
 
 /*============================================================*
