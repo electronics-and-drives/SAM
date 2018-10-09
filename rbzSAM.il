@@ -256,7 +256,7 @@ Description:
 	the three evaluations.
 *=============================================================*/
 ( defun rbzSAMrunApp (data name runName)	; data = SAM->data	; name = name of project directory (= key in AT appTable)	; runName = name of the selected run
-	(let (theRun preRet ret postRet)
+	(let ( theRun preRet ret postRet)
 		theRun = (eval data)->appTable[name]->runTable[runName]
 		preRet = (evalstring theRun->preEval)				
 		ret = (evalstring theRun->eval)		
@@ -275,15 +275,19 @@ Description:
 *=============================================================*/
 ( defun rbzSAMloadAndRunCurrentApp (data)
 	(let (name runName returnVar)
-		(if (eval data)->currentApp then
-			name = (eval data)->currentApp
+		name = (eval data)->currentApp
+		(if name then
 			runName = (eval data)->selectedRun
-			(printf "\n***** rbzSAM - Load - Name:\"%s\" Run:\"%s\"\n" name runName )
-			(rbzSAMloadIlFiles data name)
-			(rbzSAMloadIlsFiles data name)
-			(printf "***** rbzSAM - Run - Name:\"%s\" Run:\"%s\"\n" name runName )
-			returnVar = (rbzSAMrunApp data name runName)
-			(printf "***** rbzSAM - Return (preRun Run postRun) : \"%L\"" returnVar )
+			(if runName then
+				(printf "\n***** rbzSAM - Load - Name:\"%s\" Run:\"%s\"\n" name runName )
+				(rbzSAMloadIlFiles data name)
+				(rbzSAMloadIlsFiles data name)
+				(printf "***** rbzSAM - Run - Name:\"%s\" Run:\"%s\"\n" name runName )
+				returnVar = (rbzSAMrunApp data name runName)
+				(printf "***** rbzSAM - Return (preRun Run postRun) : \"%L\"" returnVar )
+			else
+				(printf "No run data available!")
+			)
 		else
 			(printf "No current application selected!")
 		)
@@ -1344,15 +1348,18 @@ Description:
 *=============================================================*/
 ( defun rbzSAMRunConfigurationForm ( window data )
 	(if (eval data)->currentApp then
+		(if (eval data)->selectedRun then
 		(eval window)->RunConfiguration = (list nil)
 		(eval window)->RunConfiguration->descriptionField = ( hiCreateOutputStringField
 			?name ( gensym 'rbzSAMRunConfigurationFormItem )
 			?value (strcat "Run definitions of \"" (eval data)->currentApp "\":")
 		)
+		
 		(eval window)->RunConfiguration->comboField = ( hiCreateComboField
 			?name ( gensym 'rbzSAMRunConfigurationFormItem )
 			?items (eval data)->appTable[(eval data)->currentApp]->runTable->?
-			?defValue (car (eval data)->appTable[(eval data)->currentApp]->runTable->?)
+			?defValue ""
+			;?defValue (car (eval data)->appTable[(eval data)->currentApp]->runTable->?)
 			?callback ""
 			?editable nil
 		)
@@ -1388,6 +1395,9 @@ Description:
 				)
 		)
 		(hiDisplayForm (eval window)->RunConfiguration->appForm)
+		else
+			(printf "No run data available!")
+		)
 	else
 		(printf "No current application selected!")
 	)
@@ -1648,7 +1658,9 @@ Description:
 		callback = ( rbzSAMgenerateImportFormFileDialogCallback window data )
 
 		( hiDisplayFileDialog
-	        ?dialogName gensym('rbzSAMimportFormFileDialog)
+	        ?dialogNam		name = (eval data)->currentApp
+		(if name then
+			runName = (eval data)->selectedRune gensym('rbzSAMimportFormFileDialog)
 	        ?callback callback
 	        ?caption "Open Existing File"
 	        ?workingDir "."
@@ -1764,10 +1776,11 @@ Description:
 		(fprintf oPort (strcat "    'description \"" discription "\" \n"))
 		(fprintf oPort "\n")
 		(fprintf oPort "    'runList list( \n")
-		(fprintf oPort "        list( \"non\" list( nil 'preEval \"\" 'postEval \"\" 'eval \"\" ) ) \n")
+		;(fprintf oPort "        list( \"non\" list( nil 'preEval \"\" 'postEval \"\" 'eval \"\" ) ) \n")
 		(fprintf oPort "    ) \n")
 		(fprintf oPort "\n")
-		(fprintf oPort "    'runDefault \"non\" \n")
+		;(fprintf oPort "    'runDefault \"non\" \n")
+		(fprintf oPort "    'runDefault nil \n")
 		(fprintf oPort ") \n")
 		( close oPort )		; Close Port
 	)
