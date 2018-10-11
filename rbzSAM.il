@@ -1244,6 +1244,10 @@ Description:
 				'eval		(strcat "(" defunName " )")
 			)
 			(eval data)->currentApp = appName
+			(eval data)->appTable[(eval data)->currentApp]->runDefault = defunName
+			(eval data)->selectedRun = defunName
+			(eval window)->vToolbar->xRunCombo->value = defunName
+
 			(rbzSAMupdateRunComboFromCurrentApp window data)
 			(rbzSAMsaveAppData window data)	; update .sap-File from appTable
 		)
