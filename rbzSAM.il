@@ -300,7 +300,15 @@ Description:
 	"Load and Run" to the data structure data->selectedRun.
 *=============================================================*/
 ( defun rbzSAMupdateSelectedRunFromRunCombo (window data)
-	(eval data)->selectedRun = (eval window)->vToolbar->xRunCombo->value
+	( let (tempValue)
+		tempValue = (eval window)->vToolbar->xRunCombo->value
+		(if tempValue == "nil" then
+		    (eval data)->selectedRun = nil
+		else
+			(eval data)->selectedRun = tempValue
+		);if
+	)
+	
 )
 /*============================================================*
 Description:
@@ -309,11 +317,16 @@ Description:
 	selected (here SAM->data->selectetApp).
 *=============================================================*/
 ( defun rbzSAMupdateRunComboFromCurrentApp (window data)
-	( let (name) 
+	( let (name tempItems tempValue)
 		name = (eval data)->currentApp
 		( when name	
-			(eval window)->vToolbar->xRunCombo->items = (reverse (eval data)->appTable[name]->runTable->?)	
-			(eval window)->vToolbar->xRunCombo->value = (eval data)->appTable[name]->runDefault
+			tempItems = (reverse (eval data)->appTable[name]->runTable->?)
+			(eval window)->vToolbar->xRunCombo->items = (sort tempItems nil)
+
+			tempValue = (eval data)->appTable[name]->runDefault
+			(eval window)->vToolbar->xRunCombo->value = (rbzSAMnilToString tempValue)
+			
+			;(printf "Debug: rbzSAMupdateRunComboFromCurrentApp Name: %A runDefault: %A\n" name (rbzSAMnilToString tempValue))
 			;(printf "DEBUG: combo items = %L" (eval window)->vToolbar->xRunCombo->items)
 		)
 	)
@@ -452,7 +465,7 @@ Description:
 ( defun rbzSAMexportApp ( data name ) 
 	( let (command)
 		command = ( strcat (eval data)->config->export " " name ".sam -C " (eval data)->config->workspacePath " " name "/ " )
-		( printf "\n***** rbzSAM - Export %s \nDebug: %s\n" name command )
+		;( printf "\n***** rbzSAM - Export %s \nDebug: %s\n" name command )
 		( shell command )
 	)
 )
@@ -463,7 +476,7 @@ Description:
 ( defun rbzSAMimportApp	( data file )
 	( let (command)
 		command = ( strcat (eval data)->config->import " " file " -C " (eval data)->config->workspacePath )
-		( printf "\n***** rbzSAM - Import %s \nDebug: %s\n" file command )
+		;( printf "\n***** rbzSAM - Import %s \nDebug: %s\n" file command )
 		( shell command )
 	)
 )
@@ -1348,56 +1361,67 @@ Description:
 *=============================================================*/
 ( defun rbzSAMRunConfigurationForm ( window data )
 	(if (eval data)->currentApp then
-		(if (eval data)->selectedRun then
-		(eval window)->RunConfiguration = (list nil)
-		(eval window)->RunConfiguration->descriptionField = ( hiCreateOutputStringField
-			?name ( gensym 'rbzSAMRunConfigurationFormItem )
-			?value (strcat "Run definitions of \"" (eval data)->currentApp "\":")
-		)
+		;(if (eval data)->selectedRun then
+			(eval window)->RunConfiguration = (list nil)
+			(eval window)->RunConfiguration->descriptionField = ( hiCreateOutputStringField
+				?name ( gensym 'rbzSAMRunConfigurationFormItem )
+				?value (strcat "Run definitions of \"" (eval data)->currentApp "\":")
+			)
+			
+			(eval window)->RunConfiguration->comboField = ( hiCreateComboField
+				?name ( gensym 'rbzSAMRunConfigurationFormItem )
+				?items (sort (eval data)->appTable[(eval data)->currentApp]->runTable->? nil)
+				;?defValue "nil"
+				;?defValue (rbzSAMnilToString (car (eval data)->appTable[(eval data)->currentApp]->runTable->?))
+				?defValue (eval window)->vToolbar->xRunCombo->value
+				?callback ""
+				?editable nil
+			)
+			(eval window)->RunConfiguration->comboField->insertPolicy = 'InsertAtTop
 		
-		(eval window)->RunConfiguration->comboField = ( hiCreateComboField
-			?name ( gensym 'rbzSAMRunConfigurationFormItem )
-			?items (eval data)->appTable[(eval data)->currentApp]->runTable->?
-			?defValue ""
-			;?defValue (car (eval data)->appTable[(eval data)->currentApp]->runTable->?)
-			?callback ""
-			?editable nil
-		)
-		(eval window)->RunConfiguration->comboField->insertPolicy = 'InsertAtTop
-	
-		(eval window)->RunConfiguration->ButtonEdit = ( hiCreateFormButton
-			?name ( gensym 'rbzSAMRunConfigurationFormItem )
-			?callback ( strcat "(rbzSAMopenEditRunConfigurationForm '" window " '" data ")" )
-			?buttonText "Edit"
-		)
-		(eval window)->RunConfiguration->ButtonDelete = ( hiCreateFormButton
-			?name ( gensym 'rbzSAMRunConfigurationFormItem )
-			?callback ( strcat "(rbzSAMDeleteRunConfigurationCallback '" window " '" data ")" )
-			?buttonText "Delete"
-		)
-		(eval window)->RunConfiguration->ButtonAdd = ( hiCreateFormButton
-			?name ( gensym 'rbzSAMRunConfigurationFormItem )
-			?callback ( strcat "(rbzSAMopenAddRunConfigurationForm '" window " '" data ")" )
-			?buttonText "Add"
-		)
-		(eval window)->RunConfiguration->appForm = ( hiCreateAppForm 
-			?name ( gensym 'rbzSAMRunConfigurationFormItem )
-			?formTitle "SAM: Edit Run"
-			?dialogStyle 'modal
-			?buttonLayout 'OKCancel
-			?callback ( strcat "(rbzSAMRunConfigurationFormCallback '" window " '" data  ")" )
-			?fields (list
-				(list (eval window)->RunConfiguration->descriptionField 0:5  400:30)	;x_xpos : x_ypos x_width : x_height
-				(list (eval window)->RunConfiguration->comboField	20:50	230:30)
-				(list (eval window)->RunConfiguration->ButtonEdit	350:40 	80:20)
-				(list (eval window)->RunConfiguration->ButtonDelete	350:65	80:20)
-				(list (eval window)->RunConfiguration->ButtonAdd	350:90	80:20)
-				)
-		)
-		(hiDisplayForm (eval window)->RunConfiguration->appForm)
-		else
-			(printf "No run data available!")
-		)
+			(eval window)->RunConfiguration->ButtonEdit = ( hiCreateFormButton
+				?name ( gensym 'rbzSAMRunConfigurationFormItem )
+				?callback ( strcat "(rbzSAMopenEditRunConfigurationForm '" window " '" data ")" )
+				?buttonText "Edit"
+				?enabled nil
+			)
+			(eval window)->RunConfiguration->ButtonDelete = ( hiCreateFormButton
+				?name ( gensym 'rbzSAMRunConfigurationFormItem )
+				?callback ( strcat "(rbzSAMDeleteRunConfigurationCallback '" window " '" data ")" )
+				?buttonText "Delete"
+				?enabled nil
+			)
+			(eval window)->RunConfiguration->ButtonAdd = ( hiCreateFormButton
+				?name ( gensym 'rbzSAMRunConfigurationFormItem )
+				?callback ( strcat "(rbzSAMopenAddRunConfigurationForm '" window " '" data ")" )
+				?buttonText "Add"
+			)
+			(eval window)->RunConfiguration->appForm = ( hiCreateAppForm 
+				?name ( gensym 'rbzSAMRunConfigurationFormItem )
+				?formTitle "SAM: Edit Run"
+				?dialogStyle 'modal
+				?buttonLayout 'OKCancel
+				?callback ( strcat "(rbzSAMRunConfigurationFormCallback '" window " '" data  ")" )
+				?fields (list
+					(list (eval window)->RunConfiguration->descriptionField 0:5  400:30)	;x_xpos : x_ypos x_width : x_height
+					(list (eval window)->RunConfiguration->comboField	20:50	230:30)
+					(list (eval window)->RunConfiguration->ButtonEdit	350:40 	80:20)
+					(list (eval window)->RunConfiguration->ButtonDelete	350:65	80:20)
+					(list (eval window)->RunConfiguration->ButtonAdd	350:90	80:20)
+					)
+			)
+			(if (eval data)->appTable[(eval data)->currentApp]->runTable->? then
+			    (eval window)->RunConfiguration->ButtonEdit->enabled = t
+				(eval window)->RunConfiguration->ButtonDelete->enabled = t
+			;else
+			;	(printf "Debug Edit Run: runTable contains NO elements")
+			);if
+			
+			(hiDisplayForm (eval window)->RunConfiguration->appForm)
+			;(printf "Debug Edit Run: %A")
+		;else
+		;	(printf "No run data available!")
+		;)
 	else
 		(printf "No current application selected!")
 	)
@@ -1408,10 +1432,10 @@ Description:
 *=============================================================*/
 ( defun rbzSAMRunConfigurationFormCallback (window data) 
 	( let (selectedRun)
-		selectedRun = (eval window)->RunConfiguration->comboField->value
 		(printf "Save Run Configuration")
-		(eval window)->vToolbar->xRunCombo->items = (eval data)->appTable[(eval data)->currentApp]->runTable->?
-		(eval window)->vToolbar->xRunCombo->value = (car (eval data)->appTable[(eval data)->currentApp]->runTable->?)
+		;selectedRun = (eval window)->RunConfiguration->comboField->value
+		(eval window)->vToolbar->xRunCombo->items = (sort (eval data)->appTable[(eval data)->currentApp]->runTable->? nil)
+		;(eval window)->vToolbar->xRunCombo->value = (rbzSAMnilToString (car (eval data)->appTable[(eval data)->currentApp]->runTable->?))
 		(rbzSAMsaveAppData window data)	; update .sap-File from appTable
 	)
 )
@@ -1420,52 +1444,62 @@ Description:
 	--description--
 *=============================================================*/
 ( defun rbzSAMopenEditRunConfigurationForm (window data) 
-	(let (selectedRun)
+	(let (selectedRun currentRunTable)
 		selectedRun = (eval window)->RunConfiguration->comboField->value;
-		(eval window)->EditRunConfiguration = (list nil)
-		(eval window)->EditRunConfiguration->descriptionField = ( hiCreateOutputStringField
-			?name ( gensym 'rbzSAMEditRunConfigurationFormItem )
-			?value (strcat "Edit Run \"" selectedRun "\" of App " (eval data)->currentApp ":")
-		)
-		(eval window)->EditRunConfiguration->RunNameField = ( hiCreateStringField
-			?name ( gensym 'rbzSAMEditRunConfigurationFormItem )
-			?prompt "Run Name:"
-			?defValue selectedRun
-			?editable nil
-		)
-		(eval window)->EditRunConfiguration->PreEvalField = ( hiCreateStringField
-			?name ( gensym 'rbzSAMEditRunConfigurationFormItem )
-			?prompt "Pre Eval:"
-			?defValue (eval data)->appTable[(eval data)->currentApp]->runTable[selectedRun]->preEval
-			?editable t
-		)
-		(eval window)->EditRunConfiguration->PostEvalField = ( hiCreateStringField
-			?name ( gensym 'rbzSAMEditRunConfigurationFormItem )
-			?prompt "Post Eval:"
-			?defValue (eval data)->appTable[(eval data)->currentApp]->runTable[selectedRun]->postEval
-			?editable t
-		)
-		(eval window)->EditRunConfiguration->EvalField = ( hiCreateStringField
-			?name ( gensym 'rbzSAMEditRunConfigurationFormItem )
-			?prompt "Eval:"
-			?defValue (eval data)->appTable[(eval data)->currentApp]->runTable[selectedRun]->eval
-			?editable t
-		)
-		(eval window)->EditRunConfiguration->appForm = ( hiCreateAppForm 
-			?name ( gensym 'rbzSAMEditRunConfigurationFormItem )
-			?formTitle "SAM: Edit Run"
-			?dialogStyle 'modal
-			?buttonLayout 'OKCancel
-			?callback ( strcat "(rbzSAMopenEditRunConfigurationFormCallback '" window " '" data  ")" )
-			?fields (list
-				(list (eval window)->EditRunConfiguration->descriptionField 0:5		400:30)
-				(list (eval window)->EditRunConfiguration->RunNameField		20:40	400:25	60)
-				(list (eval window)->EditRunConfiguration->PreEvalField		20:70	400:25	60)
-				(list (eval window)->EditRunConfiguration->PostEvalField	20:100	400:25	60)
-				(list (eval window)->EditRunConfiguration->EvalField		20:130	400:25	60)
-				)
-		)
-		(hiDisplayForm (eval window)->EditRunConfiguration->appForm)
+		currentRunTable = (eval data)->appTable[(eval data)->currentApp]->runTable->?
+
+		(if (member selectedRun currentRunTable) then
+		    ;printf("Debug Edit Run Config: SelectedRun is part of current runTable")
+		    (eval window)->EditRunConfiguration = (list nil)
+			(eval window)->EditRunConfiguration->descriptionField = ( hiCreateOutputStringField
+				?name ( gensym 'rbzSAMEditRunConfigurationFormItem )
+				?value (strcat "Edit Run \"" selectedRun "\" of App " (eval data)->currentApp ":")
+			)
+			(eval window)->EditRunConfiguration->RunNameField = ( hiCreateStringField
+				?name ( gensym 'rbzSAMEditRunConfigurationFormItem )
+				?prompt "Run Name:"
+				?defValue selectedRun
+				?editable nil
+			)
+			(eval window)->EditRunConfiguration->PreEvalField = ( hiCreateStringField
+				?name ( gensym 'rbzSAMEditRunConfigurationFormItem )
+				?prompt "Pre Eval:"
+				?defValue (eval data)->appTable[(eval data)->currentApp]->runTable[selectedRun]->preEval
+				?editable t
+			)
+			(eval window)->EditRunConfiguration->PostEvalField = ( hiCreateStringField
+				?name ( gensym 'rbzSAMEditRunConfigurationFormItem )
+				?prompt "Post Eval:"
+				?defValue (eval data)->appTable[(eval data)->currentApp]->runTable[selectedRun]->postEval
+				?editable t
+			)
+			(eval window)->EditRunConfiguration->EvalField = ( hiCreateStringField
+				?name ( gensym 'rbzSAMEditRunConfigurationFormItem )
+				?prompt "Eval:"
+				?defValue (eval data)->appTable[(eval data)->currentApp]->runTable[selectedRun]->eval
+				?editable t
+			)
+			(eval window)->EditRunConfiguration->appForm = ( hiCreateAppForm 
+				?name ( gensym 'rbzSAMEditRunConfigurationFormItem )
+				?formTitle "SAM: Edit Run"
+				?dialogStyle 'modal
+				?buttonLayout 'OKCancel
+				?callback ( strcat "(rbzSAMopenEditRunConfigurationFormCallback '" window " '" data  ")" )
+				?fields (list
+					(list (eval window)->EditRunConfiguration->descriptionField 0:5		400:30)
+					(list (eval window)->EditRunConfiguration->RunNameField		20:40	400:25	60)
+					(list (eval window)->EditRunConfiguration->PreEvalField		20:70	400:25	60)
+					(list (eval window)->EditRunConfiguration->PostEvalField	20:100	400:25	60)
+					(list (eval window)->EditRunConfiguration->EvalField		20:130	400:25	60)
+					)
+			)
+			(hiDisplayForm (eval window)->EditRunConfiguration->appForm)
+		else
+			;printf("Debug Edit Run Config: SelectedRun is NOT part of current runTable")
+			(printf "SelectedRun is NOT part of current runTable!")
+		);if
+
+
 	)
 )
 /*============================================================*
@@ -1485,15 +1519,30 @@ Description:
 	--description--
 *=============================================================*/
 ( defun rbzSAMDeleteRunConfigurationCallback (window data) 
-	(let (selectedRun)
-		selectedRun = (eval window)->RunConfiguration->comboField->value
-		(remove selectedRun (eval data)->appTable[(eval data)->currentApp]->runTable)
-		
-		(eval window)->RunConfiguration->comboField->items = (reverse (eval data)->appTable[(eval data)->currentApp]->runTable->?)
-		(eval window)->RunConfiguration->comboField->value = (car (eval data)->appTable[(eval data)->currentApp]->runTable->?)
-		; Close and Open the Form to update the items of the Combobox
-		(hiFormClose (eval window)->RunConfiguration->appForm)
-		(rbzSAMRunConfigurationForm window	data)
+	(let (selectedRun currentRunTable)
+		selectedRun = (eval window)->RunConfiguration->comboField->value;
+		currentRunTable = (eval data)->appTable[(eval data)->currentApp]->runTable->?
+		(if (member selectedRun currentRunTable) then
+			(remove selectedRun (eval data)->appTable[(eval data)->currentApp]->runTable)
+
+			(if selectedRun == (eval data)->appTable[(eval data)->currentApp]->runDefault then
+				(eval data)->appTable[(eval data)->currentApp]->runDefault = (car (eval data)->appTable[(eval data)->currentApp]->runTable->?)
+			);if
+
+			(if selectedRun == (eval data)->selectedRun then
+				(eval data)->selectedRun = (eval data)->appTable[(eval data)->currentApp]->runDefault
+				(eval window)->vToolbar->xRunCombo->value = (rbzSAMnilToString (eval data)->selectedRun)
+			)
+
+			;(eval window)->RunConfiguration->comboField->items = (rbzSAMnilToString (reverse (eval data)->appTable[(eval data)->currentApp]->runTable->?))
+			;(eval window)->RunConfiguration->comboField->value = (rbzSAMnilToString (car (eval data)->appTable[(eval data)->currentApp]->runTable->?))
+			; Close and Open the Form to update the items of the Combobox
+			(hiFormClose (eval window)->RunConfiguration->appForm)
+			(rbzSAMRunConfigurationForm window	data)
+		else
+			;printf("Debug Edit Run Config: SelectedRun is NOT part of current runTable")
+			(printf "SelectedRun is NOT part of current runTable!")
+		);if
 	)
 )
 /*============================================================*
@@ -1561,6 +1610,11 @@ Description:
 				'postEval	(eval window)->AddRunConfiguration->PostEvalField->value
 				'eval		(eval window)->AddRunConfiguration->EvalField->value
 			)
+			(eval data)->appTable[(eval data)->currentApp]->runDefault = RunName
+			(eval data)->selectedRun = RunName
+			;(eval window)->RunConfiguration->comboField->value = RunName
+			(eval window)->vToolbar->xRunCombo->value = RunName
+
 		else
 			(printf "\n*ERROR* Run Name is not valid.")
 		)
@@ -1658,9 +1712,7 @@ Description:
 		callback = ( rbzSAMgenerateImportFormFileDialogCallback window data )
 
 		( hiDisplayFileDialog
-	        ?dialogNam		name = (eval data)->currentApp
-		(if name then
-			runName = (eval data)->selectedRune gensym('rbzSAMimportFormFileDialog)
+	        ?dialogName (gensym 'rbzSAMimportFormFileDialog)
 	        ?callback callback
 	        ?caption "Open Existing File"
 	        ?workingDir "."
@@ -1755,7 +1807,7 @@ Description:
 		)
 		(fprintf oPort "    ) \n")
 		(fprintf oPort "\n")
-		(fprintf oPort "    'runDefault \"%s\" \n" (eval data)->selectedRun);(eval data)->appTable[name]->runDefault)
+		(fprintf oPort "    'runDefault \"%s\" \n" (rbzSAMnilToString (eval data)->selectedRun));(eval data)->appTable[name]->runDefault)
 		(fprintf oPort ") \n")
 		( close oPort )
 	)
@@ -1945,7 +1997,7 @@ Description:
 			(fprintf oPort (strcat "(defun " defunName " () \n\t(let ()\n\t\tnil\n\t)\n)" ) )
 			( close oPort )
 		else
-			(printf "\nDEBUG: File does not exist." )
+			(printf "\nFile does not exist." )
 		)
 	)
 )
@@ -1970,7 +2022,23 @@ Description:
 			(fprintf oPort (strcat "(defun helloworldexample () \n\t(let ()\n\t\t(printf \"Hello World\\n\" )\n\t)\n)" ) )
 			( close oPort )
 		else
-			(printf "\nDEBUG: File does not exist." )
+			(printf "\nFile does not exist." )
 		)
 	)	
 )
+
+/*============================================================*
+Description:
+	This function converts a 'nil to a "nil". If the value is 
+	not 'nil, the value is not changed. 
+*=============================================================*/
+(defun rbzSAMnilToString (value)
+    (let (returnVar)
+    	(if value == nil then
+    	    returnVar = "nil"
+    	else
+    		returnVar = value
+    	);if
+        returnVar
+    );let
+);defun
