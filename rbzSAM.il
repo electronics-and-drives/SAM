@@ -278,15 +278,17 @@ Description:
 		name = (eval data)->currentApp
 		(if name then
 			runName = (eval data)->selectedRun
+
+			(printf "\n***** rbzSAM - Load - Name:\"%s\" Run:\"%s\"\n" name (rbzSAMnilToString runName) )
+			(rbzSAMloadIlFiles data name)
+			(rbzSAMloadIlsFiles data name)
+
 			(if runName then
-				(printf "\n***** rbzSAM - Load - Name:\"%s\" Run:\"%s\"\n" name runName )
-				(rbzSAMloadIlFiles data name)
-				(rbzSAMloadIlsFiles data name)
 				(printf "***** rbzSAM - Run - Name:\"%s\" Run:\"%s\"\n" name runName )
 				returnVar = (rbzSAMrunApp data name runName)
 				(printf "***** rbzSAM - Return (preRun Run postRun) : \"%L\"" returnVar )
 			else
-				(printf "No run data available!")
+				(printf "***** rbzSAM - Run not possible, no run data available!")
 			)
 		else
 			(printf "No current application selected!")
@@ -318,17 +320,14 @@ Description:
 *=============================================================*/
 ( defun rbzSAMupdateRunComboFromCurrentApp (window data)
 	( let (name tempItems tempValue)
-		name = (eval data)->currentApp
-		( when name	
-			tempItems = (reverse (eval data)->appTable[name]->runTable->?)
-			(eval window)->vToolbar->xRunCombo->items = (sort tempItems nil)
+		name = (eval data)->currentApp	
+		tempItems = (reverse (eval data)->appTable[name]->runTable->?)
+		(eval window)->vToolbar->xRunCombo->items = (sort tempItems nil)
 
-			tempValue = (eval data)->appTable[name]->runDefault
-			(eval window)->vToolbar->xRunCombo->value = (rbzSAMnilToString tempValue)
-			
-			;(printf "Debug: rbzSAMupdateRunComboFromCurrentApp Name: %A runDefault: %A\n" name (rbzSAMnilToString tempValue))
-			;(printf "DEBUG: combo items = %L" (eval window)->vToolbar->xRunCombo->items)
-		)
+		tempValue = (eval data)->appTable[name]->runDefault
+		(eval window)->vToolbar->xRunCombo->value = (rbzSAMnilToString tempValue)
+		;(printf "Debug: rbzSAMupdateRunComboFromCurrentApp Name: %A runDefault: %A\n" name (rbzSAMnilToString tempValue))
+		;(printf "DEBUG: combo items = %L" (eval window)->vToolbar->xRunCombo->items)
 	)
 )
 /*============================================================*
@@ -340,8 +339,10 @@ Description:
 	(xDisplayApp).
 *=============================================================*/
 ( defun rbzSAMupdateToolbarDisplayApp (window data)
-	(when (eval data)->currentApp
+	(if (eval data)->currentApp then
 		(eval window)->vToolbar->xDisplayApp->value = (eval data)->currentApp
+	else
+		(eval window)->vToolbar->xDisplayApp->value = ""
 	)
 )
 /*============================================================*
@@ -1163,56 +1164,61 @@ Description:
 	the button (...) to open a file dialog.
 *=============================================================*/
 ( defun rbzSAMCreateNewFileForm ( window data )
-	(eval window)->CreateNewFile = (list nil)
-	(eval window)->CreateNewFile->templateList = (list "-" "(defun..." "defun Hello World Example")
-	(eval window)->CreateNewFile->descriptionFieldApp = ( hiCreateOutputStringField
-		?name ( gensym 'rbzSAMCreateNewFileFormItem )
-		?value "Add new file to App:"
-	)
-	(eval window)->CreateNewFile->comboFieldApp = ( hiCreateComboField
-		?name ( gensym 'rbzSAMCreateNewFileFormItem )
-		?items (eval data)->appTable->?
-		?defValue (eval data)->currentApp
-		?editable nil
-	)
-	(eval window)->CreateNewFile->fileName = ( hiCreateStringField
-		?name ( gensym 'rbzSAMCreateNewFileFormItem )
-		?prompt "File Name"
-		?defValue "new.il"
-		?editable t
-	)
-	(eval window)->CreateNewFile->descriptionFieldTemplate = ( hiCreateOutputStringField
-		?name ( gensym 'rbzSAMCreateNewFileFormItem )
-		?value "Templates:"
-	)
-	(eval window)->CreateNewFile->comboFieldTemplate = ( hiCreateComboField
-		?name ( gensym 'rbzSAMCreateNewFileFormItem )
-		?items (eval window)->CreateNewFile->templateList
-		?defValue (car (eval window)->CreateNewFile->templateList)
-		?callback (strcat "(rbzSAMCreateNewFileTemplateCallback '" window " '" data  ")")
-		?editable nil
-	)
-	(eval window)->CreateNewFile->defunName = ( hiCreateStringField
-		?name ( gensym 'rbzSAMCreateNewFileFormItem )
-		?prompt "Function Name"	
-		?defValue "myAppFunction"
-		?editable t
-	)
-	(eval window)->CreateNewFile->appForm = ( hiCreateAppForm 
-		?name  ( gensym 'rbzSAMCreateNewFileFormItem )
-		?formTitle "SAM: Create New File"
-		?dialogStyle 'modal
-		?buttonLayout 'OKCancel
-		?callback ( strcat "(rbzSAMCreateNewFileFormCallback '" window " '" data  ")" )
-		?fields (list
-			(list (eval window)->CreateNewFile->descriptionFieldApp			0:0		160:30)
-			(list (eval window)->CreateNewFile->comboFieldApp				170:0	250:30)
-			(list (eval window)->CreateNewFile->fileName					0:40	420:30 170)
-			(list (eval window)->CreateNewFile->descriptionFieldTemplate	0:80	160:30)
-			(list (eval window)->CreateNewFile->comboFieldTemplate			170:80	250:30)
+	(if (eval data)->currentApp then
+	    (eval window)->CreateNewFile = (list nil)
+		(eval window)->CreateNewFile->templateList = (list "-" "(defun..." "defun Hello World Example")
+		(eval window)->CreateNewFile->descriptionFieldApp = ( hiCreateOutputStringField
+			?name ( gensym 'rbzSAMCreateNewFileFormItem )
+			?value "Add new file to App:"
 		)
-	)
-	(hiDisplayForm (eval window)->CreateNewFile->appForm)
+		(eval window)->CreateNewFile->comboFieldApp = ( hiCreateComboField
+			?name ( gensym 'rbzSAMCreateNewFileFormItem )
+			?items (eval data)->appTable->?
+			?defValue (eval data)->currentApp
+			?editable nil
+		)
+		(eval window)->CreateNewFile->fileName = ( hiCreateStringField
+			?name ( gensym 'rbzSAMCreateNewFileFormItem )
+			?prompt "File Name"
+			?defValue "new.il"
+			?editable t
+		)
+		(eval window)->CreateNewFile->descriptionFieldTemplate = ( hiCreateOutputStringField
+			?name ( gensym 'rbzSAMCreateNewFileFormItem )
+			?value "Templates:"
+		)
+		(eval window)->CreateNewFile->comboFieldTemplate = ( hiCreateComboField
+			?name ( gensym 'rbzSAMCreateNewFileFormItem )
+			?items (eval window)->CreateNewFile->templateList
+			?defValue (car (eval window)->CreateNewFile->templateList)
+			?callback (strcat "(rbzSAMCreateNewFileTemplateCallback '" window " '" data  ")")
+			?editable nil
+		)
+		(eval window)->CreateNewFile->defunName = ( hiCreateStringField
+			?name ( gensym 'rbzSAMCreateNewFileFormItem )
+			?prompt "Function Name"	
+			?defValue "myAppFunction"
+			?editable t
+		)
+		(eval window)->CreateNewFile->appForm = ( hiCreateAppForm 
+			?name  ( gensym 'rbzSAMCreateNewFileFormItem )
+			?formTitle "SAM: Create New File"
+			?dialogStyle 'modal
+			?buttonLayout 'OKCancel
+			?callback ( strcat "(rbzSAMCreateNewFileFormCallback '" window " '" data  ")" )
+			?fields (list
+				(list (eval window)->CreateNewFile->descriptionFieldApp			0:0		160:30)
+				(list (eval window)->CreateNewFile->comboFieldApp				170:0	250:30)
+				(list (eval window)->CreateNewFile->fileName					0:40	420:30 170)
+				(list (eval window)->CreateNewFile->descriptionFieldTemplate	0:80	160:30)
+				(list (eval window)->CreateNewFile->comboFieldTemplate			170:80	250:30)
+			)
+		)
+		(hiDisplayForm (eval window)->CreateNewFile->appForm)
+	else
+		(printf "No current application selected!")
+	);if
+	
 )
 /*============================================================*
 Description:
@@ -1272,6 +1278,7 @@ Description:
 	--description--
 *=============================================================*/
 ( defun rbzSAMCreateNewFileTemplateCallback ( window data )
+	;(printf "Debug: Select template\n")
 	(if (eq "-" (eval window)->CreateNewFile->comboFieldTemplate->value ) then
 		(hiSetFieldEnabled
 			(eval window)->CreateNewFile->defunName
