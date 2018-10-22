@@ -422,11 +422,11 @@ Description:
 ( defun rbzSAMupdateFromAppTree (window data) 
 	( hiTreeRemoveAllItems (eval window)->vForm->oAppTree )
 	(let (ocurrentTreeItem)
-		(foreach oneItem (eval data)->appTable->?
+		(foreach oneItem ( sort (eval data)->appTable->? nil ) 
 			; Create main tree item
 			ocurrentTreeItem =	(hiCreateTreeItem
 									( gensym 'rbzSAMtreeItem )
-									(list oneItem (eval data)->appTable[oneItem]->description (eval data)->appTable[oneItem]->path)
+									(list oneItem (eval data)->appTable[oneItem]->description (eval data)->appTable[oneItem]->path window 'app oneItem)
 								)
 			; Add sub tree to main tree item
 			(hiItemInsertTree
@@ -439,7 +439,7 @@ Description:
 					itemroot
 					(hiCreateTreeItem
 						( gensym 'rbzSAMtreeItem )
-						(list (substring (rindex subItem "/") 2) "SKILL Code File" subItem)	; Items of the Tree Table are Name, Discription, Path
+						(list (substring (rindex subItem "/") 2) "SKILL Code File" subItem window 'file oneItem)	; Items of the Tree Table are Name, Discription, Path
 					)
 				)
 			)
@@ -449,7 +449,7 @@ Description:
 					itemroot
 					(hiCreateTreeItem
 						( gensym 'rbzSAMtreeItem )
-						(list (substring (rindex subItem "/") 2) "SKILL Code File" subItem)	; Items of the Tree Table are Name, Discription, Path
+						(list (substring (rindex subItem "/") 2) "SKILL Code File" subItem window 'file oneItem)	; Items of the Tree Table are Name, Discription, Path
 					)
 				)
 			)
@@ -459,7 +459,7 @@ Description:
 					itemroot
 					(hiCreateTreeItem
 						( gensym 'rbzSAMtreeItem )
-						(list (substring (rindex subItem "/") 2) "Library" subItem)	; Items of the Tree Table are Name, Discription, Path
+						(list (substring (rindex subItem "/") 2) "Library" subItem window 'lib oneItem)	; Items of the Tree Table are Name, Discription, Path
 					)
 				)
 			)
@@ -893,7 +893,7 @@ Description:
 		; Create main tree
 		(eval window)->vForm->oAppTree = ( hiCreateTree 'root)
 		(let (ocurrentTreeItem)
-			(foreach oneItem (eval data)->appTable->?
+			(foreach oneItem ( sort (eval data)->appTable->? nil ) 
 				; Create main tree item
 				ocurrentTreeItem =	(hiCreateTreeItem
 										( gensym 'rbzSAMtreeItem )
