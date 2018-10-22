@@ -423,11 +423,11 @@ Description:
 	(let ( currentExpandedName currentExpandedItems ocurrentTreeItem)
 		currentExpandedName = (list)
 		currentExpandedItems = (list)
+
+		;search for expanded item and save the name in list
 		(foreach item (hiTreeTableGetExpandedItems (eval window)->vForm->oAppTreeTable)
 		     currentExpandedName = (append1 currentExpandedName (car (eval item)->_description) )
-		     
 		 );foreach 
-		printf("%A " currentExpandedName)
 
 		( hiTreeRemoveAllItems (eval window)->vForm->oAppTree )
 	
@@ -437,11 +437,10 @@ Description:
 									( gensym 'rbzSAMtreeItem )
 									(list oneItem (eval data)->appTable[oneItem]->description (eval data)->appTable[oneItem]->path window 'app oneItem)
 								)
+			;if the actual oneItem is in the expanded name list then save the tree item object in new expanded list
 			(if (lindex currentExpandedName oneItem) then
-			    printf("expand %A\n" ocurrentTreeItem)
+			    ;printf("expand %A\n" ocurrentTreeItem)
 			    currentExpandedItems = append1(currentExpandedItems ocurrentTreeItem )
-			else
-				;printf("no expand %A\n" oneItem)
 			);if
 
 			; Add sub tree to main tree item
@@ -486,9 +485,8 @@ Description:
 			)
 		)
 
-		printf("foo: %A " currentExpandedItems)
+		;all saved TreeItems are expanded
 		(foreach item currentExpandedItems
-			
 			(hiExpandTreeItem item)
 		);foreach
 		
