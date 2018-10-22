@@ -420,14 +420,30 @@ Description:
 	out of the association table SAM->data->appTable.
 *=============================================================*/
 ( defun rbzSAMupdateFromAppTree (window data) 
-	( hiTreeRemoveAllItems (eval window)->vForm->oAppTree )
-	(let (ocurrentTreeItem)
+	(let ( currentExpandedName currentExpandedItems ocurrentTreeItem)
+		currentExpandedName = (list)
+		currentExpandedItems = (list)
+		(foreach item (hiTreeTableGetExpandedItems (eval window)->vForm->oAppTreeTable)
+		     currentExpandedName = (append1 currentExpandedName (car (eval item)->_description) )
+		     
+		 );foreach 
+		printf("%A " currentExpandedName)
+
+		( hiTreeRemoveAllItems (eval window)->vForm->oAppTree )
+	
 		(foreach oneItem ( sort (eval data)->appTable->? nil ) 
 			; Create main tree item
 			ocurrentTreeItem =	(hiCreateTreeItem
 									( gensym 'rbzSAMtreeItem )
 									(list oneItem (eval data)->appTable[oneItem]->description (eval data)->appTable[oneItem]->path window 'app oneItem)
 								)
+			(if (lindex currentExpandedName oneItem) then
+			    printf("expand %A\n" ocurrentTreeItem)
+			    currentExpandedItems = append1(currentExpandedItems ocurrentTreeItem )
+			else
+				;printf("no expand %A\n" oneItem)
+			);if
+
 			; Add sub tree to main tree item
 			(hiItemInsertTree
 				ocurrentTreeItem
@@ -469,6 +485,13 @@ Description:
 				ocurrentTreeItem
 			)
 		)
+
+		printf("foo: %A " currentExpandedItems)
+		(foreach item currentExpandedItems
+			
+			(hiExpandTreeItem item)
+		);foreach
+		
 	)
 )
 /*============================================================*
