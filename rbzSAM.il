@@ -962,9 +962,8 @@ Description:
 				?callback (strcat "(rbzSAMappTreeContextMenuCallbackOpenFolder '" window " '" data ")") )
 			( hiCreateMenuItem
 				?name ( gensym 'rbzSAMmenuItem )	
-				?itemText "Open File in Editor"	
-				;?callback (strcat "(rbzSAMceckLibIntegrationToVirtuoso '" window " '" data ")") )
-				?callback "(printf \"bar\\n\")" )
+				?itemText "Open File in Editor"
+				?callback (strcat "(rbzSAMappTreeContextMenuCallbackOpenFile '" window " '" data ")") )
 		)
 		(eval window)->vForm->oAppTreeContextMenu = ( hiCreateMenu
 			( gensym 'rbzSAMmenu )
@@ -1022,7 +1021,7 @@ Description:
 /*============================================================*
 Description:
 	Callback function for Context Menu in oAppTree. Function
-	set the actual selected row to the current application.
+	opens the Folder of the current application in a file browser.
 *=============================================================*/
 (defun rbzSAMappTreeContextMenuCallbackOpenFolder (window data)
 	(let (description app)
@@ -1030,6 +1029,23 @@ Description:
 		app = (nth 5 description)
 		;(printf "Debug: OpenFolder: %A" (eval data)->appTable[app]->path)
 		(rbzSAMopenFileBrowser window data	(eval data)->appTable[app]->path)
+	);let    
+);defun
+
+/*============================================================*
+Description:
+	Callback function for Context Menu in oAppTree. Function
+	opens the current selected file in a editor.
+*=============================================================*/
+(defun rbzSAMappTreeContextMenuCallbackOpenFile (window data)
+	(let (description)
+		description = (eval window)->vForm->oAppTreeContextMenuCurrentDescription
+		(if (equal (nth 4 description) 'file) then
+			(eval data)->config->editfile = (nth 2 description)
+			(rbzSAMopenFileInEditor window data)
+		else
+			printf("No file.")
+		);if
 	);let    
 );defun
 
