@@ -59,7 +59,8 @@ Description:
 		(eval data)->config->workspacePath = (simplifyFilename "./skill")	; here: (simplifyFilename "./skill") => "/home/.../skill"
 		(eval data)->config->import = "gtar -xzkf"							
 		(eval data)->config->export = "gtar -czf"							
-		(eval data)->config->editor = "gedit"								
+		(eval data)->config->editor = "gedit"
+		(eval data)->config->filebrowser = "thunar"								
 		(eval data)->config->editfile = ""
 		(eval data)->config->notAskForWorkspace = t							
 		
@@ -165,6 +166,9 @@ Description:
 		rbzsaconfigFile = (rbzSAMreadSaConfig ".")
 		(if (neq rbzsaconfigFile->editor nil) then
 			(eval data)->config->editor = rbzsaconfigFile->editor
+		)
+		(if (neq rbzsaconfigFile->filebrowser nil) then
+			(eval data)->config->filebrowser = rbzsaconfigFile->filebrowser
 		)
 		(if (neq rbzsaconfigFile->workspacePath nil) then
 			(eval data)->config->workspacePath = rbzsaconfigFile->workspacePath
@@ -388,6 +392,14 @@ Description:
 *=============================================================*/
 ( defun rbzSAMopenFileInEditor (window data)
 	(system (strcat (eval data)->config->editor " " (eval data)->config->editfile " &"))
+)
+/*============================================================*
+Description:
+	This function opens the file in editfile with the shell
+	command in editor for editing in an external editor.
+*=============================================================*/
+( defun rbzSAMopenFileBrowser (window data path)
+	(system (strcat (eval data)->config->filebrowser " " path " &"))
 )
 /*============================================================*
 Description:
@@ -885,7 +897,7 @@ Description:
 				; Create main tree item
 				ocurrentTreeItem =	(hiCreateTreeItem
 										( gensym 'rbzSAMtreeItem )
-										(list oneItem (eval data)->appTable[oneItem]->description (eval data)->appTable[oneItem]->path)
+										(list oneItem (eval data)->appTable[oneItem]->description (eval data)->appTable[oneItem]->path window 'app oneItem)
 									)
 				; Add sub tree to main tree item
 				(hiItemInsertTree
@@ -898,7 +910,7 @@ Description:
 						itemroot
 						(hiCreateTreeItem
 							( gensym 'rbzSAMtreeItem )
-							(list (substring (rindex subItem "/") 2) "SKILL Code File" subItem)	; Items der Tree Table sind Name, Discription, Path
+							(list (substring (rindex subItem "/") 2) "SKILL Code File" subItem window 'file oneItem)	; Items der Tree Table sind Name, Discription, Path
 						)
 					)
 				)
@@ -908,7 +920,7 @@ Description:
 						itemroot
 						(hiCreateTreeItem
 							( gensym 'rbzSAMtreeItem )
-							(list (substring (rindex subItem "/") 2) "SKILL Code File" subItem)	; Items der Tree Table sind Name, Discription, Path
+							(list (substring (rindex subItem "/") 2) "SKILL Code File" subItem window 'file oneItem)	; Items der Tree Table sind Name, Discription, Path
 						)
 					)
 				)
@@ -918,7 +930,7 @@ Description:
 						itemroot
 						(hiCreateTreeItem
 							( gensym 'rbzSAMtreeItem )
-							(list (substring (rindex subItem "/") 2) "Library" subItem)	; Items der Tree Table sind Name, Discription, Path
+							(list (substring (rindex subItem "/") 2) "Library" subItem window 'lib oneItem)	; Items der Tree Table sind Name, Discription, Path
 						)
 					)
 				)
@@ -938,6 +950,31 @@ Description:
 		)
 		(eval window)->vForm->oAppTreeDoubleClickCallback = ( rbzSAMgenerateTreeDoubleClickCallback window data)
 		(eval window)->vForm->oAppTreeTable->hiDoubleClickCallback = (eval window)->vForm->oAppTreeDoubleClickCallback
+
+		(eval window)->vForm->oAppTreeContextMenuItem = ( list		
+			( hiCreateMenuItem	
+				?name ( gensym 'rbzSAMmenuItem )	
+				?itemText "Set Current Application"		
+				?callback (strcat "(rbzSAMappTreeContextMenuCallbackSetCurrentApp '" window " '" data ")") )
+			( hiCreateMenuItem	
+				?name ( gensym 'rbzSAMmenuItem )	
+				?itemText "Open Folder in File Browser"		
+				?callback (strcat "(rbzSAMappTreeContextMenuCallbackOpenFolder '" window " '" data ")") )
+			( hiCreateMenuItem
+				?name ( gensym 'rbzSAMmenuItem )	
+				?itemText "Open File in Editor"	
+				;?callback (strcat "(rbzSAMceckLibIntegrationToVirtuoso '" window " '" data ")") )
+				?callback "(printf \"bar\\n\")" )
+		)
+		(eval window)->vForm->oAppTreeContextMenu = ( hiCreateMenu
+			( gensym 'rbzSAMmenu )
+			"Example Menu"
+			(eval window)->vForm->oAppTreeContextMenuItem
+		)
+		(eval window)->vForm->oAppTreeTable->hiContextMenu = (eval window)->vForm->oAppTreeContextMenu
+
+		;Callback which invoked just before the context menu is displayed
+		(eval window)->vForm->oAppTreeTable->hiShowContextMenuCallback='rbzSAMappTreeContextMenuCallbackShow
 
 		(eval window)->oForm = ( hiCreateAppForm
 			?name ( gensym 'rbzSAMtreeForm )
@@ -968,6 +1005,47 @@ Description:
 		)
 	)
 )
+
+/*============================================================*
+Description:
+	Callback function for Context Menu in oAppTree. Function
+	set the actual selected row to the current application.
+*=============================================================*/
+(defun rbzSAMappTreeContextMenuCallbackSetCurrentApp (window data)
+	(let (description)
+		description = (eval window)->vForm->oAppTreeContextMenuCurrentDescription
+		;(printf "Debug: SetCurrentApp: %A" (nth 5 description))
+		(rbzSAMupdateCurrentApp window data (nth 5 description))
+	);let    
+);defun
+
+/*============================================================*
+Description:
+	Callback function for Context Menu in oAppTree. Function
+	set the actual selected row to the current application.
+*=============================================================*/
+(defun rbzSAMappTreeContextMenuCallbackOpenFolder (window data)
+	(let (description app)
+		description = (eval window)->vForm->oAppTreeContextMenuCurrentDescription
+		app = (nth 5 description)
+		;(printf "Debug: OpenFolder: %A" (eval data)->appTable[app]->path)
+		(rbzSAMopenFileBrowser window data	(eval data)->appTable[app]->path)
+	);let    
+);defun
+
+/*============================================================*
+Description:
+	Callback Function for the oAppTree which invoked just 
+	before the context menu is displayed (right click).
+*=============================================================*/
+(defun rbzSAMappTreeContextMenuCallbackShow (menu form field item)
+	(let (window)
+		;(printf "rbzSAMappTreeContextMenuCallbackShow: %A" (eval item)->_description)
+		window = (nth 3 (eval item)->_description)
+		(eval window)->vForm->oAppTreeContextMenuCurrentDescription = (eval item)->_description
+	);let    
+);defun
+
 /*============================================================*
 Description:
 	This function creates and opens a window, when rbzSAMcore
@@ -1787,6 +1865,7 @@ Description:
 		oPort = ( outfile path )
 		(fprintf oPort "list( nil \n")
 		(fprintf oPort "    'editor \"%s\" \n" (eval data)->config->editor)
+		(fprintf oPort "    'filebrowser \"%s\" \n" (eval data)->config->filebrowser)
 		(fprintf oPort "    'workspacePath \"%s\" \n" (eval data)->config->workspacePath)
 		(fprintf oPort "    'notAskForWorkspace %N \n" (eval data)->config->notAskForWorkspace)
 		(fprintf oPort ") \n")
