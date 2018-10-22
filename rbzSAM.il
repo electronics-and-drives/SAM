@@ -824,21 +824,21 @@ Description:
 		;Menu: Options
 		;=======================================================
 		/*	Create the Banner-Menu "Options":
-				Options	>	Select editor
+				Options	>	Editor Browser Config
 		*/
 		(eval window)->vMenu->aOptionsItem = ( list		
 			( hiCreateMenuItem	
 				?name ( gensym 'rbzSAMmenuItem )	
-				?itemText "&Select Editor"		
-				?callback (strcat "(rbzSAMSelectEditorForm '" window " '" data ")") )
+				?itemText "&Editor+Browser Config"		
+				?callback (strcat "(rbzSAMEditorBrowserConfigForm '" window " '" data ")") )
 			( hiCreateMenuItem
 				?name ( gensym 'rbzSAMmenuItem )	
 				?itemText "&Check Library Integration"	
 				?callback (strcat "(rbzSAMceckLibIntegrationToVirtuoso '" window " '" data ")") )
-			( hiCreateMenuItem	
-				?name ( gensym 'rbzSAMmenuItem )		
-				?itemText "&Other Option"			
-				?callback "(printf \"Other Option\" )" )	
+	;		( hiCreateMenuItem	
+	;			?name ( gensym 'rbzSAMmenuItem )		
+	;			?itemText "&Other Option"			
+	;			?callback "(printf \"Other Option\" )" )	
 		)
 		(eval window)->vMenu->oOptions = ( hiCreatePulldownMenu
 			( gensym 'rbzSAMmenu )	
@@ -1109,37 +1109,48 @@ Description:
 /*============================================================*
 Description:
 	This function is called, when the user clicks on the banner
-	menu Options->Select Editor. It opens a window, where the 
+	menu Options->Editor Browser Config. It opens a window, where the 
 	user can edit the terminal command for opening files in an
 	external editor.
 *=============================================================*/
-( defun rbzSAMSelectEditorForm ( window data )
-	(eval window)->SelectEditor = (list nil)
-	(eval window)->SelectEditor->filePathField = ( hiCreateStringField	
-		?name ( gensym 'rbzSAMSelectEditorFormItem )
+( defun rbzSAMEditorBrowserConfigForm ( window data )
+	(eval window)->EditorBrowserConfig = (list nil)
+	(eval window)->EditorBrowserConfig->editorPathField = ( hiCreateStringField	
+		?name ( gensym 'rbzSAMEditorBrowserConfigFormItem )
 		?prompt "Select Editor (Terminal Command): "
 		?defValue (eval data)->config->editor ; = "gedit"
 		?editable t
 	)
-	(eval window)->SelectEditor->appForm = ( hiCreateAppForm 
-		?name  ( gensym 'rbzSAMSelectEditorFormItem )
-		?formTitle "SAM: Select Editor"
+	(eval window)->EditorBrowserConfig->browserPathField = ( hiCreateStringField	
+		?name ( gensym 'rbzSAMEditorBrowserConfigFormItem )
+		?prompt "Select File Browser (Terminal Command): "
+		?defValue (eval data)->config->filebrowser 
+		?editable t
+	)
+	(eval window)->EditorBrowserConfig->appForm = ( hiCreateAppForm 
+		?name  ( gensym 'rbzSAMEditorBrowserConfigFormItem )
+		?formTitle "SAM: Editor+Browser Config"
 		?dialogStyle 'modal
 		?buttonLayout 'OKCancel
-		?callback ( strcat "(rbzSAMSelectEditorFormCallback '" window " '" data  ")" )
-		?fields (list (list (eval window)->SelectEditor->filePathField 0:0 420:30 190))	;x_xpos : x_ypos x_width : x_height [x_promptBoxWidthOrTitleHeight]
+		?callback ( strcat "(rbzSAMEditorBrowserConfigFormCallback '" window " '" data  ")" )
+		?fields (list ;x_xpos : x_ypos x_width : x_height [x_promptBoxWidthOrTitleHeight]
+			(list (eval window)->EditorBrowserConfig->editorPathField 0:0 450:30 220 )
+			(list (eval window)->EditorBrowserConfig->browserPathField 0:40 450:30 220 )
+		)	
 	)
-	(hiDisplayForm (eval window)->SelectEditor->appForm)
+	(hiDisplayForm (eval window)->EditorBrowserConfig->appForm)
 )
 /*============================================================*
 Description:
-	This is the callback function of rbzSAMSelectEditorForm,
+	This is the callback function of rbzSAMEditorBrowserConfigForm,
 	that is called by clicking the OK-Button.
 *=============================================================*/
-( defun rbzSAMSelectEditorFormCallback (window data) 
-	( let (selectedEditor)
-		selectedEditor = (eval window)->SelectEditor->filePathField->value
+( defun rbzSAMEditorBrowserConfigFormCallback (window data) 
+	( let (selectedEditor selectedBrowser)
+		selectedEditor = (eval window)->EditorBrowserConfig->editorPathField->value
+		selectedBrowser = (eval window)->EditorBrowserConfig->browserPathField->value
 		(eval data)->config->editor = selectedEditor
+		(eval data)->config->filebrowser = selectedBrowser
 		(rbzSAMsaveSaConfigData window data)	; Save new config-data in .samconfig-File
 	)
 )
