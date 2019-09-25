@@ -54,7 +54,7 @@ Description:
 	initialized.
 *=============================================================*/
 (defun rbzSAMinitializeData (data)						; data is a DPL
-	(let (rbzsaconfigFile)
+	(let ()
 		(eval data)->config = (list 'nil)
 		(eval data)->config->workspacePath = (simplifyFilename "./skill")	; here: (simplifyFilename "./skill") => "/home/.../skill"
 		(eval data)->config->import = "gtar -xzkf"							
@@ -162,6 +162,7 @@ Description:
 *=============================================================*/
 ( defun rbzSAMupdateconfig (window data)
 	(let (rbzsaconfigFile)
+		window ;added for lint
 		rbzsaconfigFile = (rbzSAMreadSaConfig ".")
 		(if (neq rbzsaconfigFile->editor nil) then
 			(eval data)->config->editor = rbzsaconfigFile->editor
@@ -369,6 +370,7 @@ Description:
 	command in editor for editing in an external editor.
 *=============================================================*/
 ( defun rbzSAMopenFileInEditor (window data)
+	window ;added for lint
 	(system (strcat (eval data)->config->editor " " (eval data)->config->editfile " &"))
 )
 /*============================================================*
@@ -391,7 +393,7 @@ Description:
 *=============================================================*/
 ( defun rbzSAMupdateFromAppTree (window data) 
 	( hiTreeRemoveAllItems (eval window)->vForm->oAppTree )
-	(let (ocurrentTreeItem)
+	(let (ocurrentTreeItem itemroot)
 		(foreach oneItem (eval data)->appTable->?
 			; Create main tree item
 			ocurrentTreeItem =	(hiCreateTreeItem
@@ -472,7 +474,7 @@ Description:
 	Manager. Calling this function in the CIW starts the SAM.
 *=============================================================*/
 ( defun rbzSAMcore ()
-	( let ( ( SAM ( list nil ) ) name )	
+	( let ( ( SAM ( list nil ) )  )	
 		SAM->window = (gensym 'rbzSAMwindow)
 		(set SAM->window (list 'nil))
 
@@ -520,6 +522,11 @@ Description:
 				?iconText "New App"
 				?callback ( strcat "(rbzSAMCreateNewAppForm '" window " '" data  ")")
 		)
+		(eval window)->vAction->del = ( hiCreateAction	; Button "New"
+				?name ( gensym 'rbzSAMaction )
+				?iconText "Delete"
+				?callback ( strcat "(rbzSAMDelete '" window " '" data  ")")
+		)		
 		(eval window)->vAction->importApp = ( hiCreateAction
 				?name ( gensym 'rbzSAMaction )
 				?iconText "Import"
@@ -561,6 +568,7 @@ Description:
 		;====================================
 		(eval window)->vToolbar->aFileItem = ( list	
 			(eval window)->vAction->newApp	
+			(eval window)->vAction->del
 			hiCreateToolbarSeparator(?name ( gensym 'rbzSAMtoolbarSeparator ))
 			(eval window)->vAction->importApp
 			(eval window)->vAction->exportApp
@@ -753,7 +761,7 @@ Description:
 			( hiCreateMenuItem						
 				?name ( gensym 'rbzSAMmenuItem )	
 				?itemText "DockXY"					
-				?callback "(println)( \"DockXY\" )" )
+				?callback "(println \"DockXY\" )" )
 		)
 		(eval window)->vMenu->aWindowAssistans =  ( hiCreatePulldownMenu
 			( gensym 'rbzSAMassistansMenu )
@@ -862,7 +870,7 @@ Description:
 		(eval window)->vForm = (list nil)
 		; Create main tree
 		(eval window)->vForm->oAppTree = ( hiCreateTree 'root)
-		(let (ocurrentTreeItem)
+		(let (ocurrentTreeItem itemroot)
 			(foreach oneItem (eval data)->appTable->?
 				; Create main tree item
 				ocurrentTreeItem =	(hiCreateTreeItem
@@ -1087,9 +1095,9 @@ Description:
 	workspace become clicked.
 *=============================================================*/
 ( defun rbzSAMopenSwitchWorkspaceFileDialog (window data)
-	( let (SwitchWorkspaceCallback selectedWorkspaceDir)
+	( let (SwitchWorkspaceCallback )
 		SwitchWorkspaceCallback =  (rbzSAMgenerateSwitchWorkspaceFileDialogCallback window data )
-		selectedWorkspaceDir = ( hiDisplayFileDialog
+		( hiDisplayFileDialog
 	        ?dialogName ( gensym 'rbzSAMSwitchWorkspaceFileDialog)
 	        ?callback SwitchWorkspaceCallback
 	        ?caption "Open Workspace Directory"
@@ -1108,6 +1116,7 @@ Description:
 	creates and evaluates a callback function as a string.
 *=============================================================*/
 (defun rbzSAMgenerateSwitchWorkspaceFileDialogCallback (window data) 
+	data ; added for lint
 	( let (functionSymbol functionAsString) 
 		functionSymbol = (gensym 'rbzSAMSwitchWorkspaceFileDialogCallback)
 		functionAsString = ( strcat
@@ -1131,7 +1140,7 @@ Description:
 	app form Switch workspace. 
 *=============================================================*/
 ( defun rbzSAMSwitchWorkspaceFormCallback (window data) 
-	( let (pathToWorkspaceDir rbzsaconfigFile)
+	( let (pathToWorkspaceDir)
 		pathToWorkspaceDir = (eval window)->SwitchWorkspace->filePathField->value
 		(printf "Switch Workspace Directory to: %s \n" pathToWorkspaceDir)
 		(eval data)->config->workspacePath = pathToWorkspaceDir
@@ -1231,7 +1240,7 @@ Description:
 		(system (strcat "touch " pathToNewFileDir "/" fileName " &"))
 		(system (strcat "touch " pathToNewFileDir "/" fileName " &"))
 		; Add Template Data:
-		(if (eq "(defun..." templateName) then
+		(if (equal "(defun..." templateName) then
 			(rbzSAMwriteTemplateDefunToFile (strcat pathToNewFileDir "/" fileName) defunName )
 			(eval data)->appTable[appName]->runTable[defunName] = (list nil
 				'preEval	""
@@ -1242,7 +1251,7 @@ Description:
 			(rbzSAMupdateRunComboFromCurrentApp window data)
 			(rbzSAMsaveAppData window data)	; update .sap-File from appTable
 		)
-		(if (eq "defun Hello World Example" templateName) then
+		(if (equal "defun Hello World Example" templateName) then
 			(rbzSAMwriteTemplateExampleToFile (strcat pathToNewFileDir "/" fileName))
 			(eval data)->appTable[appName]->runTable["helloworldexample"] = (list nil
 				'preEval	""
@@ -1263,13 +1272,15 @@ Description:
 	--description--
 *=============================================================*/
 ( defun rbzSAMCreateNewFileTemplateCallback ( window data )
-	(if (eq "-" (eval window)->CreateNewFile->comboFieldTemplate->value ) then
+	window ;added for lint
+	data ; added for lint
+	(if (equal "-" (eval window)->CreateNewFile->comboFieldTemplate->value ) then
 		(hiSetFieldEnabled
 			(eval window)->CreateNewFile->defunName
 			nil
 		)
 	)
-	(if (eq "(defun..." (eval window)->CreateNewFile->comboFieldTemplate->value ) then
+	(if (equal "(defun..." (eval window)->CreateNewFile->comboFieldTemplate->value ) then
 		;(printf "AddField...: %N"
 			(hiAddField
 				(eval window)->CreateNewFile->appForm
@@ -1281,7 +1292,7 @@ Description:
 			)
 		;)
 	)
-	(if (eq "defun Hello World Example" (eval window)->CreateNewFile->comboFieldTemplate->value ) then
+	(if (equal "defun Hello World Example" (eval window)->CreateNewFile->comboFieldTemplate->value ) then
 		(hiSetFieldEnabled
 			(eval window)->CreateNewFile->defunName
 			nil
@@ -1322,6 +1333,16 @@ Description:
 	)
 	(hiDisplayForm (eval window)->CreateNewApp->appForm)
 )
+
+/*============================================================*
+Description:
+	This function deletes an app or file
+*=============================================================*/
+( defun rbzSAMDelete ( window data )
+	window
+	data
+	nil
+)
 /*============================================================*
 Description:
 	This function is called by clicking the button "OK" in the
@@ -1347,7 +1368,6 @@ Description:
 				?buttonLayout 'Close
 			);hiDisplayAppDBox
 		);if
-
 	)
 )
 /*============================================================*
@@ -1356,6 +1376,8 @@ Description:
 *=============================================================*/
 ( defun rbzSAMrunConfigurationsForm (window data) 
 	( let ()
+		window ;added for lint
+		data ;added for lint
 		(printf "Open Run Configurations Form")
 	)
 )
@@ -1421,8 +1443,8 @@ Description:
 	--description--
 *=============================================================*/
 ( defun rbzSAMRunConfigurationFormCallback (window data) 
-	( let (selectedRun)
-		selectedRun = (eval window)->RunConfiguration->comboField->value
+	( let ()
+		;selectedRun = (eval window)->RunConfiguration->comboField->value
 		(printf "Save Run Configuration")
 		(eval window)->vToolbar->xRunCombo->items = (eval data)->appTable[(eval data)->currentApp]->runTable->?
 		(eval window)->vToolbar->xRunCombo->value = (car (eval data)->appTable[(eval data)->currentApp]->runTable->?)
@@ -1703,6 +1725,8 @@ Description:
 *=============================================================*/
 (defun rbzSAMgenerateImportFormFileDialogCallback (window data) 
 	( let (functionSymbol functionAsString) 
+		window ;added for lint
+		data ;added for lint
 		functionSymbol = (gensym 'rbzSAMimportFormFileDialogCallback)
 		functionAsString = ( strcat
 			"( defun " functionSymbol " (dialog event userData \"&ss\") "
@@ -1731,6 +1755,7 @@ Description:
 *=============================================================*/
 ( defun rbzSAMsaveSaConfigData (window data)
 	(let (oPort path)
+		window ;added for lint
 		path = (strcat (simplifyFilename ".") "/.samconfig")
 		;printf("DEBUG: Save config data to %s" path )
 		oPort = ( outfile path )
@@ -1748,7 +1773,8 @@ Description:
 	save the changed runTable and selected Run.
 *=============================================================*/
 ( defun rbzSAMsaveAppData (window data)
-	(let (oPort path)
+	(let (oPort path name)
+		window ;added for lint
 		name = (eval data)->currentApp
 		path = (eval data)->config->workspacePath
 		path = (strcat path "/" name "/.sap")
@@ -1831,6 +1857,8 @@ Description:
 *=============================================================*/
 ( defun rbzSAMceckLibIntegrationToVirtuoso (window data)
 	(let (cdslibFile oPort sNextline cdsDefineList cdslibaryList notintegratedLibraryList)
+		window ;added for lint
+		data;added for lint
 		cdslibFile = ""
 		cdsDefineList = (list )
 		cdslibaryList = (list )
@@ -1890,7 +1918,7 @@ Description:
 	cds.lib for name conflicts and prints a WARNING to the CIW.
 *=============================================================*/
 ( defun rbzSAMceckLibIntegrationNameConflict ()
-	(let (cdslibFile oPort sNextline cdsDefineList TEMPcdslibaryNameList TEMPcdslibaryName nameConflictList)
+	(let (cdslibFile oPort sNextline cdsDefineList cdslibaryList cdslibaryNameList TEMPcdslibaryNameList TEMPcdslibaryName nameConflictList)
 		cdslibFile = ""
 		cdslibaryList = (list )
 		cdslibaryNameList = (list )
@@ -1914,6 +1942,7 @@ Description:
 			)
 			TEMPcdslibaryNameList = cdslibaryNameList
 			(foreach libraryName cdslibaryNameList
+				libraryName ;for lint
 				TEMPcdslibaryName = (car TEMPcdslibaryNameList)	;...first element
 				TEMPcdslibaryNameList = (cdr TEMPcdslibaryNameList)	;...the rest
 				(if (neq nil (lindex TEMPcdslibaryNameList TEMPcdslibaryName)) then
