@@ -1339,9 +1339,45 @@ Description:
 	This function deletes an app or file
 *=============================================================*/
 ( defun rbzSAMDelete ( window data )
-	window
-	data
-	nil
+	(let (lItem)
+
+		(when (hiTreeTableGetSelectedItems (eval window)->vForm->oAppTreeTable)
+
+			lItem = (hiGetTreeItemDescription (eval (car (hiTreeTableGetSelectedItems (eval window)->vForm->oAppTreeTable))))
+
+			(if (isDir (caddr lItem)) then
+			    (hiDisplayAppDBox 
+					?name 'error 
+					?dboxBanner "SAM Delete App" 
+					?dboxText (lsprintf "Do you really want do delete the app \"%s\" ?" (car lItem))
+					?callback (strcat "(rbzSAMDeleteCallback '" window " '" data  " \"" (caddr lItem) "\")")
+					?dialogType 4 
+					?buttonLayout 'YesNo
+				);hiDisplayAppDBox
+			else
+				(hiDisplayAppDBox 
+					?name 'error 
+					?dboxBanner "SAM Delete App" 
+					?dboxText (lsprintf "Do you reallly want do delete the file \"%s\" ?" (car lItem))
+					?callback (strcat "(rbzSAMDeleteCallback '" window " '" data  " \"" (caddr lItem) "\")")
+					?dialogType 4 
+					?buttonLayout 'YesNo
+				);hiDisplayAppDBox
+			);if
+		);when
+	);let
+)
+
+/*============================================================*
+Description:
+	Callback for DiplayAppBox of fun rbzSAMDelete
+*=============================================================*/
+( defun rbzSAMDeleteCallback ( window data sPath)
+	(let (lItem)
+
+		(system (strcat "rm -r " sPath))
+		rbzSAMrefreshAllApp(window data) 
+	);let
 )
 /*============================================================*
 Description:
