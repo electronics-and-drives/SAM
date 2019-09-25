@@ -1347,7 +1347,7 @@ Description:
 
 			(if (isDir (caddr lItem)) then
 			    (hiDisplayAppDBox 
-					?name 'error 
+					?name 'delApp 
 					?dboxBanner "SAM Delete App" 
 					?dboxText (lsprintf "Do you really want do delete the app \"%s\" ?" (car lItem))
 					?callback (strcat "(rbzSAMDeleteCallback '" window " '" data  " \"" (caddr lItem) "\")")
@@ -1356,9 +1356,9 @@ Description:
 				);hiDisplayAppDBox
 			else
 				(hiDisplayAppDBox 
-					?name 'error 
-					?dboxBanner "SAM Delete App" 
-					?dboxText (lsprintf "Do you reallly want do delete the file \"%s\" ?" (car lItem))
+					?name 'delFile 
+					?dboxBanner "SAM Delete File" 
+					?dboxText (lsprintf "Do you really want do delete the file \"%s\" ?" (car lItem))
 					?callback (strcat "(rbzSAMDeleteCallback '" window " '" data  " \"" (caddr lItem) "\")")
 					?dialogType 4 
 					?buttonLayout 'YesNo
