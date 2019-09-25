@@ -1317,13 +1317,25 @@ Description:
 *=============================================================*/
 ( defun rbzSAMCreateNewAppFormCallback (window data) 
 	( let (pathToNewProjectDir projectDiscription)
-		pathToNewProjectDir	= (strcat (eval data)->config->workspacePath "/" (eval window)->CreateNewApp->projectPathField->value)
-		projectDiscription	= (eval window)->CreateNewApp->projectDiscription->value
-		;(printf "Create New App in Directory: %N" pathToNewProjectDir)
-		;(printf "Set Project discription to: %N" projectDiscription)
-		(system (strcat "mkdir " pathToNewProjectDir))			; create Directory
-		(rbzSAMcreateStdSa pathToNewProjectDir projectDiscription)
-		(rbzSAMrefreshAllApp window data)
+
+		(if (isDir (eval data)->config->workspacePath ) then
+			pathToNewProjectDir	= (strcat (eval data)->config->workspacePath "/" (eval window)->CreateNewApp->projectPathField->value)
+			projectDiscription	= (eval window)->CreateNewApp->projectDiscription->value
+			;(printf "Create New App in Directory: %N" pathToNewProjectDir)
+			;(printf "Set Project discription to: %N" projectDiscription)
+			(system (strcat "mkdir " pathToNewProjectDir))			; create Directory
+			(rbzSAMcreateStdSa pathToNewProjectDir projectDiscription)
+			(rbzSAMrefreshAllApp window data)	    
+		else
+			(hiDisplayAppDBox 
+				?name 'error 
+				?dboxBanner "SAM Error" 
+				?dboxText "No valid worksapce selected" 
+				?dialogType 1 
+				?buttonLayout 'Close
+			);hiDisplayAppDBox
+		);if
+
 	)
 )
 /*============================================================*
