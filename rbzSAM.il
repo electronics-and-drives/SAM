@@ -60,7 +60,8 @@ Description:
 		(eval data)->config->import = "gtar -xzkf"							
 		(eval data)->config->export = "gtar -czf"							
 		(eval data)->config->editor = "gedit"		
-		(eval data)->config->terminalEmulator = "xterm"							
+		(eval data)->config->terminalEmulator = "xterm"
+		(eval data)->config->fileBrowser = "thunar"					
 		(eval data)->config->editfile = ""
 		(eval data)->config->notAskForWorkspace = t							
 		
@@ -165,13 +166,16 @@ Description:
 	(let (rbzsaconfigFile)
 		window ;added for lint
 		rbzsaconfigFile = (rbzSAMreadSaConfig ".")
-		(if (neq rbzsaconfigFile->editor nil) then
+		(when rbzsaconfigFile->editor
 			(eval data)->config->editor = rbzsaconfigFile->editor
 		)
-		(if (neq rbzsaconfigFile->terminalEmulator nil) then
+		(when rbzsaconfigFile->terminalEmulator
 			(eval data)->config->terminalEmulator = rbzsaconfigFile->terminalEmulator
+		)
+		(when rbzsaconfigFile->fileBrowser
+			(eval data)->config->fileBrowser = rbzsaconfigFile->fileBrowser
 		)		
-		(if (neq rbzsaconfigFile->workspacePath nil) then
+		(when rbzsaconfigFile->workspacePath
 			(eval data)->config->workspacePath = rbzsaconfigFile->workspacePath
 		)
 		(eval data)->config->notAskForWorkspace = rbzsaconfigFile->notAskForWorkspace
@@ -377,6 +381,8 @@ Description:
 	window ;added for lint
 	(system (strcat (eval data)->config->editor " " (eval data)->config->editfile " &"))
 )
+
+
 /*============================================================*
 Description:
 	This function calls all update functions to update the SAM.
@@ -659,12 +665,15 @@ Description:
 		/*	Create the Banner-Menu "File":
 				File	>	New		>	New App
 									>	New File
+						>	Open In	>	Terminal
+									>   File Browser		
 						>	Import
 						>	Export
 						>	Switch Workspace
 						>	Exit
 		*/
 		(eval window)->vMenu = (list nil)
+
 		; Create the items for the pulldown menu for the slider menu "New" im Pulldown-Menu "File":
 		(eval window)->vMenu->aFileNewItem = (list
 			(eval window)->vAction->newApp
@@ -674,12 +683,34 @@ Description:
 				?callback ( strcat "(rbzSAMCreateNewFileForm '" window " '" data  ")" )	;"(printf \"Create new Code-File\" )"
 			)
 		)
+		; Create the items for the pulldown menu for the slider menu "Open In" im Pulldown-Menu "File":
+		(eval window)->vMenu->aOpenInItems = (list
+			( hiCreateMenuItem
+				?name ( gensym 'rbzSAMmenuItem )
+				?itemText "File Browser"
+				?callback ( strcat "(rbzSAMOpenInFileBrowser '" window " '" data  ")" )	;"(printf \"Create new Code-File\" )"
+			)
+			( hiCreateMenuItem
+				?name ( gensym 'rbzSAMmenuItem )
+				?itemText "Terminal"
+				?callback ( strcat "(rbzSAMOpenInTerminal '" window " '" data  ")" )	;"(printf \"Create new Code-File\" )"
+			)
+		)
+
 		; Create the pulldown menu for the slider menu "New" in the pulldown menu "File":
 		(eval window)->vMenu->aFileNew = (hiCreatePulldownMenu
 			( gensym 'rbzSAMmenuItem )
 			""
 			(eval window)->vMenu->aFileNewItem
 		)
+
+		; Create the pulldown menu for the slider menu "Open In" in the pulldown menu "File":
+		(eval window)->vMenu->aOpenIn = (hiCreatePulldownMenu
+			( gensym 'rbzSAMmenuItem )
+			""
+			(eval window)->vMenu->aOpenInItems
+		)
+
 		; Create the slider menues in the pulldown menue "File":
 		(eval window)->vMenu->aFileItem = ( list
 			(hiCreateSliderMenuItem
@@ -687,10 +718,15 @@ Description:
 				?itemText "New"
 				?subMenu (eval window)->vMenu->aFileNew
 			)
+			(hiCreateSliderMenuItem
+				?name ( gensym 'rbzSAMmenuItem )
+				?itemText "Open In"
+				?subMenu (eval window)->vMenu->aOpenIn
+			)					
 			( hiCreateSeparatorMenuItem	
 				?name ( gensym 'rbzSAMmenuItem )
 			)
-			(eval window)->vAction->importApp	
+			(eval window)->vAction->importApp
 			(eval window)->vAction->exportApp	
 			( hiCreateSeparatorMenuItem			
 				?name ( gensym 'rbzSAMmenuItem ) 
@@ -816,7 +852,11 @@ Description:
 			( hiCreateMenuItem	
 				?name ( gensym 'rbzSAMmenuItem )	
 				?itemText "&Select Terminal Emulator"		
-				?callback (strcat "(rbzSAMSelectTerminalEmulatorForm '" window " '" data ")") )			
+				?callback (strcat "(rbzSAMSelectTerminalEmulatorForm '" window " '" data ")") )	
+			( hiCreateMenuItem	
+				?name ( gensym 'rbzSAMmenuItem )	
+				?itemText "&Select File Browser"		
+				?callback (strcat "(rbzSAMSelectFileBrowserForm '" window " '" data ")") )			
 			( hiCreateMenuItem
 				?name ( gensym 'rbzSAMmenuItem )	
 				?itemText "&Check Library Integration"	
@@ -1056,15 +1096,15 @@ Description:
 Description:
 	This function is called, when the user clicks on the banner
 	menu Options->Select Terminal Emulator. It opens a window, where the 
-	user can edit the terminal command for opening files in an
-	external editor.
+	user can edit the terminal command for opening a
+	terminal.
 *=============================================================*/
 ( defun rbzSAMSelectTerminalEmulatorForm ( window data )
 	(eval window)->SelectTerminalEmulator = (list nil)
 	(eval window)->SelectTerminalEmulator->filePathField = ( hiCreateStringField	
-		?name ( gensym 'rbzSAMSelectEditorFormItem )
+		?name ( gensym 'rbzSAMSelectTerminalFormItem )
 		?prompt "Select Terminal Emulator (Terminal Command): "
-		?defValue (eval data)->config->terminalEmulator ; = "gedit"
+		?defValue (eval data)->config->terminalEmulator ; = "xterm"
 		?editable t
 	)
 	(eval window)->SelectTerminalEmulator->appForm = ( hiCreateAppForm 
@@ -1080,6 +1120,32 @@ Description:
 
 /*============================================================*
 Description:
+	This function is called, when the user clicks on the banner
+	menu Options->Select File Browser. It opens a window, where the 
+	user can edit the terminal command for opening a
+	file browser.
+*=============================================================*/
+( defun rbzSAMSelectFileBrowserForm ( window data )
+	(eval window)->SelectFileBrowser = (list nil)
+	(eval window)->SelectFileBrowser->filePathField = ( hiCreateStringField	
+		?name ( gensym 'rbzSAMSelectFileBrowserFormItem )
+		?prompt "Select File Browser (Terminal Command): "
+		?defValue (eval data)->config->fileBrowser ; = "thunar"
+		?editable t
+	)
+	(eval window)->SelectFileBrowser->appForm = ( hiCreateAppForm 
+		?name  ( gensym 'rbzSAMSelectEditorFormItem )
+		?formTitle "SAM: Select File Browser"
+		?dialogStyle 'modal
+		?buttonLayout 'OKCancel
+		?callback ( strcat "(rbzSAMSelectFileBrowserFormCallback '" window " '" data  ")" )
+		?fields (list (list (eval window)->SelectFileBrowser->filePathField 0:0 500:30 250))	;x_xpos : x_ypos x_width : x_height [x_promptBoxWidthOrTitleHeight]
+	)
+	(hiDisplayForm (eval window)->SelectFileBrowser->appForm)
+)
+
+/*============================================================*
+Description:
 	This is the callback function of rbzSAMSelectEditorForm,
 	that is called by clicking the OK-Button.
 *=============================================================*/
@@ -1087,6 +1153,19 @@ Description:
 	( let (selectedEditor)
 		selectedEditor = (eval window)->SelectEditor->filePathField->value
 		(eval data)->config->editor = selectedEditor
+		(rbzSAMsaveSaConfigData window data)	; Save new config-data in .samconfig-File
+	)
+)
+
+/*============================================================*
+Description:
+	This is the callback function of rbzSAMSelectEditorForm,
+	that is called by clicking the OK-Button.
+*=============================================================*/
+( defun rbzSAMSelectFileBrowserFormCallback (window data) 
+	( let (selectedFileBrowser)
+		selectedFileBrowser = (eval window)->SelectFileBrowser->filePathField->value
+		(eval data)->config->fileBrowser = selectedFileBrowser
 		(rbzSAMsaveSaConfigData window data)	; Save new config-data in .samconfig-File
 	)
 )
@@ -1412,6 +1491,59 @@ Description:
 					?buttonLayout 'YesNo
 				);hiDisplayAppDBox
 			);if
+		);when
+	);let
+)
+
+/*============================================================*
+Description:
+	This function opens an app in a file browser
+*=============================================================*/
+( defun rbzSAMOpenInFileBrowser ( window data )
+	(let (lItem)
+
+		(when (hiTreeTableGetSelectedItems (eval window)->vForm->oAppTreeTable)
+
+			lItem = (hiGetTreeItemDescription (eval (car (hiTreeTableGetSelectedItems (eval window)->vForm->oAppTreeTable))))
+			(shell
+				(strcat
+					(eval data)->config->fileBrowser
+					" "
+					(if (isDir (caddr lItem)) then
+						(caddr lItem)
+					else
+						(strcat "/" (buildString (reverse (cdr (reverse (parseString (caddr lItem) "/")))) "/"))
+					);if
+					" &"
+				)
+			)
+		);when
+	);let
+)
+
+/*============================================================*
+Description:
+	This function opens an app in a terminal
+*=============================================================*/
+( defun rbzSAMOpenInTerminal ( window data )
+	(let (lItem)
+
+		(when (hiTreeTableGetSelectedItems (eval window)->vForm->oAppTreeTable)
+
+			lItem = (hiGetTreeItemDescription (eval (car (hiTreeTableGetSelectedItems (eval window)->vForm->oAppTreeTable))))
+			(shell
+				(strcat
+					"cd "
+					(if (isDir (caddr lItem)) then
+						(caddr lItem)
+					else
+						(strcat "/" (buildString (reverse (cdr (reverse (parseString (caddr lItem) "/")))) "/"))
+					);if
+					" && "
+					(eval data)->config->terminalEmulator
+					" &"
+				)
+			)
 		);when
 	);let
 )
@@ -1846,6 +1978,7 @@ Description:
 		(fprintf oPort "list( nil \n")
 		(fprintf oPort "    'editor \"%s\" \n" (eval data)->config->editor)
 		(fprintf oPort "    'terminalEmulator \"%s\" \n" (eval data)->config->terminalEmulator)
+		(fprintf oPort "    'fileBrowser \"%s\" \n" (eval data)->config->fileBrowser)
 		(fprintf oPort "    'workspacePath \"%s\" \n" (eval data)->config->workspacePath)
 		(fprintf oPort "    'notAskForWorkspace %N \n" (eval data)->config->notAskForWorkspace)
 		(fprintf oPort ") \n")
