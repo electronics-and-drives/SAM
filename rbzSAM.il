@@ -59,7 +59,8 @@ Description:
 		(eval data)->config->workspacePath = (simplifyFilename "./skill")	; here: (simplifyFilename "./skill") => "/home/.../skill"
 		(eval data)->config->import = "gtar -xzkf"							
 		(eval data)->config->export = "gtar -czf"							
-		(eval data)->config->editor = "gedit"								
+		(eval data)->config->editor = "gedit"		
+		(eval data)->config->terminalEmulator = "xterm"							
 		(eval data)->config->editfile = ""
 		(eval data)->config->notAskForWorkspace = t							
 		
@@ -167,6 +168,9 @@ Description:
 		(if (neq rbzsaconfigFile->editor nil) then
 			(eval data)->config->editor = rbzsaconfigFile->editor
 		)
+		(if (neq rbzsaconfigFile->terminalEmulator nil) then
+			(eval data)->config->terminalEmulator = rbzsaconfigFile->terminalEmulator
+		)		
 		(if (neq rbzsaconfigFile->workspacePath nil) then
 			(eval data)->config->workspacePath = rbzsaconfigFile->workspacePath
 		)
@@ -809,6 +813,10 @@ Description:
 				?name ( gensym 'rbzSAMmenuItem )	
 				?itemText "&Select Editor"		
 				?callback (strcat "(rbzSAMSelectEditorForm '" window " '" data ")") )
+			( hiCreateMenuItem	
+				?name ( gensym 'rbzSAMmenuItem )	
+				?itemText "&Select Terminal Emulator"		
+				?callback (strcat "(rbzSAMSelectTerminalEmulatorForm '" window " '" data ")") )			
 			( hiCreateMenuItem
 				?name ( gensym 'rbzSAMmenuItem )	
 				?itemText "&Check Library Integration"	
@@ -1043,6 +1051,33 @@ Description:
 	)
 	(hiDisplayForm (eval window)->SelectEditor->appForm)
 )
+
+/*============================================================*
+Description:
+	This function is called, when the user clicks on the banner
+	menu Options->Select Terminal Emulator. It opens a window, where the 
+	user can edit the terminal command for opening files in an
+	external editor.
+*=============================================================*/
+( defun rbzSAMSelectTerminalEmulatorForm ( window data )
+	(eval window)->SelectTerminalEmulator = (list nil)
+	(eval window)->SelectTerminalEmulator->filePathField = ( hiCreateStringField	
+		?name ( gensym 'rbzSAMSelectEditorFormItem )
+		?prompt "Select Terminal Emulator (Terminal Command): "
+		?defValue (eval data)->config->terminalEmulator ; = "gedit"
+		?editable t
+	)
+	(eval window)->SelectTerminalEmulator->appForm = ( hiCreateAppForm 
+		?name  ( gensym 'rbzSAMSelectEditorFormItem )
+		?formTitle "SAM: Select Terminal Emulator"
+		?dialogStyle 'modal
+		?buttonLayout 'OKCancel
+		?callback ( strcat "(rbzSAMSelectTerminalEmulatorFormCallback '" window " '" data  ")" )
+		?fields (list (list (eval window)->SelectTerminalEmulator->filePathField 0:0 500:30 250))	;x_xpos : x_ypos x_width : x_height [x_promptBoxWidthOrTitleHeight]
+	)
+	(hiDisplayForm (eval window)->SelectTerminalEmulator->appForm)
+)
+
 /*============================================================*
 Description:
 	This is the callback function of rbzSAMSelectEditorForm,
@@ -1052,6 +1087,19 @@ Description:
 	( let (selectedEditor)
 		selectedEditor = (eval window)->SelectEditor->filePathField->value
 		(eval data)->config->editor = selectedEditor
+		(rbzSAMsaveSaConfigData window data)	; Save new config-data in .samconfig-File
+	)
+)
+
+/*============================================================*
+Description:
+	This is the callback function of rbzSAMSelectTerminalEmulatorForm,
+	that is called by clicking the OK-Button.
+*=============================================================*/
+( defun rbzSAMSelectTerminalEmulatorFormCallback (window data) 
+	( let (selectTerminalEmulator)
+		selectTerminalEmulator = (eval window)->SelectTerminalEmulator->filePathField->value
+		(eval data)->config->terminalEmulator = selectTerminalEmulator
 		(rbzSAMsaveSaConfigData window data)	; Save new config-data in .samconfig-File
 	)
 )
@@ -1797,6 +1845,7 @@ Description:
 		oPort = ( outfile path )
 		(fprintf oPort "list( nil \n")
 		(fprintf oPort "    'editor \"%s\" \n" (eval data)->config->editor)
+		(fprintf oPort "    'terminalEmulator \"%s\" \n" (eval data)->config->terminalEmulator)
 		(fprintf oPort "    'workspacePath \"%s\" \n" (eval data)->config->workspacePath)
 		(fprintf oPort "    'notAskForWorkspace %N \n" (eval data)->config->notAskForWorkspace)
 		(fprintf oPort ") \n")
