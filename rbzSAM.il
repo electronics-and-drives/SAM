@@ -247,7 +247,7 @@ Description:
 	name with the command (load ...) in the CIW.
 *=============================================================*/
 ( defun rbzSAMloadIlsFiles (data name)
-	( mapcar 'load (eval data)->appTable[name]->ilsFileList)
+	( mapcar 'loadi (eval data)->appTable[name]->ilsFileList)
 )
 /*============================================================*
 Description:
