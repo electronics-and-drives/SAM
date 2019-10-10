@@ -893,17 +893,17 @@ Description:
 				?name ( gensym 'rbzSAMmenuItem )
 				?itemText "&About rbz"
 				?callback "(rbzSAMopenrbzHomepage )" )
-			( hiCreateSeparatorMenuItem ?name ( gensym 'rbzSAMmenuItem ) )
+			;( hiCreateSeparatorMenuItem ?name ( gensym 'rbzSAMmenuItem ) )
 			; Help-Menu of CIW (nth 3 ...)						; (nth 9 (hiGetMenuItems...)) => Cadence Online Support
-			(eval (nth 3 (hiGetBannerMenus hiGetCIWindow())))->dfiiOnline;(eval (nth 9 (hiGetMenuItems (eval (nth 3 (hiGetBannerMenus hiGetCIWindow()))))))
+			;(eval (nth 3 (hiGetBannerMenus hiGetCIWindow())))->dfiiOnline;(eval (nth 9 (hiGetMenuItems (eval (nth 3 (hiGetBannerMenus hiGetCIWindow()))))))
 			; Help-Menu of CIW (nth 3 ...)						; (nth 11 (hiGetMenuItems...)) => Cadence Community
-			(eval (nth 3 (hiGetBannerMenus hiGetCIWindow())))->dfiiCommunity;(eval (nth 11 (hiGetMenuItems (eval (nth 3 (hiGetBannerMenus hiGetCIWindow()))))))
+			;(eval (nth 3 (hiGetBannerMenus hiGetCIWindow())))->dfiiCommunity;(eval (nth 11 (hiGetMenuItems (eval (nth 3 (hiGetBannerMenus hiGetCIWindow()))))))
 			; Help-Menu of CIW (nth 3 ...)						; (nth 12 (hiGetMenuItems...)) => Cadence OS Platform Support
-			(eval (nth 3 (hiGetBannerMenus hiGetCIWindow())))->dfiiPlatform;(eval (nth 12 (hiGetMenuItems (eval (nth 3 (hiGetBannerMenus hiGetCIWindow()))))))
+			;(eval (nth 3 (hiGetBannerMenus hiGetCIWindow())))->dfiiPlatform;(eval (nth 12 (hiGetMenuItems (eval (nth 3 (hiGetBannerMenus hiGetCIWindow()))))))
 			; Help-Menu of CIW (nth 3 ...)						; (nth 14 (hiGetMenuItems...)) => Cadence Home
-			(eval (nth 3 (hiGetBannerMenus hiGetCIWindow())))->dfiiCadence;(eval (nth 14 (hiGetMenuItems (eval (nth 3 (hiGetBannerMenus hiGetCIWindow()))))))
+			;(eval (nth 3 (hiGetBannerMenus hiGetCIWindow())))->dfiiCadence;(eval (nth 14 (hiGetMenuItems (eval (nth 3 (hiGetBannerMenus hiGetCIWindow()))))))
 			; Help-Menu of CIW (nth 3 ...)						; (nth 15 (hiGetMenuItems...)) => About Virtuoso
-			(eval (nth 3 (hiGetBannerMenus hiGetCIWindow())))->dfiiAbout
+			;(eval (nth 3 (hiGetBannerMenus hiGetCIWindow())))->dfiiAbout
 		)
 		(eval window)->vMenu->oHelp = ( hiCreatePulldownMenu
 			( gensym 'rbzSAMmenu )
